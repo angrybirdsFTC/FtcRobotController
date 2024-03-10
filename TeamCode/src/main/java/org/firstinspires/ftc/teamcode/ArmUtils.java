@@ -17,14 +17,14 @@ public class ArmUtils {
 
     // Arm
     final double ARM_EXTEND_SPEED = 0.5;
-    final double ARM_LIFT_SPEED = 40;
-    final double ARM_LIFT_POWER = 0.6;
+    final double ARM_LIFT_SPEED = 20;
+    final double ARM_LIFT_POWER = 0.4;
     final int ARM_MAX_POSITION = 3200;
-    final int ARM_MIN_POSITION = -100;
+    final int ARM_MIN_POSITION = -200;
     final int ARM_EXTEND_LIMIT = 3600;
 
     // Grip
-    final double GRIP_OPEN = 0.6;
+    final double GRIP_OPEN = 0.5;
     final double GRIP_CLOSED = 0.2;
     final double GRIP_TRIGGER_THRESHOLD = 0.1;
 
@@ -40,7 +40,7 @@ public class ArmUtils {
     final int REVERSE_BACKDROP_ARM_TARGET = 3000;
 
     // Pixel Forward Backdrop Sequence
-    final int FORWARD_BACKDROP_EXTEND_TARGET = 2300;
+    final int FORWARD_BACKDROP_EXTEND_TARGET = 2200;
     final int FORWARD_BACKDROP_ARM_TARGET = 1000;
 
     // All Sequences
