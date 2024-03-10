@@ -33,7 +33,7 @@ public class ArmUtils {
     //final int ROLLER_WAIT_TIME = 1000;
 
     // Pixel Pickup Sequence
-    final int PICKUP_EXTEND_TARGET = 1680;
+    final int PICKUP_EXTEND_TARGET = 1700;
 
     // Pixel Reverse Backdrop Sequence
     final int REVERSE_BACKDROP_EXTEND_TARGET = 2000;
@@ -83,7 +83,6 @@ public class ArmUtils {
         armExtend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         armExtend.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setTargetPosition(0);
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armLift.setPower(ARM_LIFT_POWER);
@@ -107,11 +106,6 @@ public class ArmUtils {
 
             startupSequenceActive = false;
         }
-
-        //sleep(ROLLER_WAIT_TIME);
-
-        //currentArmLiftPos = 0;
-        //armLift.setTargetPosition(currentArmLiftPos);
     }
 
     void pixelPickupSequence() {
@@ -250,19 +244,10 @@ public class ArmUtils {
     }
 
     public void drone(Gamepad gamepad) {
-        //if (gamepad.left_trigger > GRIP_TRIGGER_THRESHOLD || gamepad.right_trigger > GRIP_TRIGGER_THRESHOLD) {
-            //droneServo.setPosition(DRONE_SHOOT);
-        //}
-
         if (gamepad.guide) {
             droneServo.setPosition(DRONE_SHOOT);
             sleep(100);
-            droneServo.getController().pwmDisable();
-            //droneServo.setPosition(0);
-
         }
-
-
     }
 }
 
