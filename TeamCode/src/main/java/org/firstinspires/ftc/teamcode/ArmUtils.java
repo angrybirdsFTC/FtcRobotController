@@ -1,6 +1,11 @@
 package org.firstinspires.ftc.teamcode;
 
+//import static java.lang.Thread.sleep;
+
+
 import static android.os.SystemClock.sleep;
+
+import android.icu.text.Transliterator;
 
 import com.qualcomm.robotcore.hardware.*;
 
@@ -13,13 +18,13 @@ public class ArmUtils {
     // Arm
     final double ARM_EXTEND_SPEED = 0.5;
     final double ARM_LIFT_SPEED = 40;
-    final double ARM_LIFT_POWER = 0.4;
+    final double ARM_LIFT_POWER = 0.6;
     final int ARM_MAX_POSITION = 3200;
     final int ARM_MIN_POSITION = -100;
     final int ARM_EXTEND_LIMIT = 3600;
 
     // Grip
-    final double GRIP_OPEN = 0.5;
+    final double GRIP_OPEN = 0.6;
     final double GRIP_CLOSED = 0.2;
     final double GRIP_TRIGGER_THRESHOLD = 0.1;
 
@@ -28,7 +33,7 @@ public class ArmUtils {
     //final int ROLLER_WAIT_TIME = 1000;
 
     // Pixel Pickup Sequence
-    final int PICKUP_EXTEND_TARGET = 1700;
+    final int PICKUP_EXTEND_TARGET = 1680;
 
     // Pixel Reverse Backdrop Sequence
     final int REVERSE_BACKDROP_EXTEND_TARGET = 2000;
@@ -42,16 +47,16 @@ public class ArmUtils {
     final double SEQUENCE_ARM_POWER = 0.5;
 
     // Drone
-    final double DRONE_SHOOT = 0.3;
+    final double DRONE_SHOOT = 0.4;
 
     Controller controller;
 
-    DcMotor armLift;
-    DcMotor armExtend;
-    Servo rightGrip;
-    Servo leftGrip;
-    Servo rollerServo;
-    Servo droneServo;
+    DcMotor armLift = null;
+    DcMotor armExtend = null;
+    Servo rightGrip = null;
+    Servo leftGrip = null;
+    Servo rollerServo = null;
+    Servo droneServo = null;
 
     int currentArmLiftPos = 0;
 
@@ -102,6 +107,11 @@ public class ArmUtils {
 
             startupSequenceActive = false;
         }
+
+        //sleep(ROLLER_WAIT_TIME);
+
+        //currentArmLiftPos = 0;
+        //armLift.setTargetPosition(currentArmLiftPos);
     }
 
     void pixelPickupSequence() {
@@ -240,11 +250,19 @@ public class ArmUtils {
     }
 
     public void drone(Gamepad gamepad) {
+        //if (gamepad.left_trigger > GRIP_TRIGGER_THRESHOLD || gamepad.right_trigger > GRIP_TRIGGER_THRESHOLD) {
+            //droneServo.setPosition(DRONE_SHOOT);
+        //}
+
         if (gamepad.guide) {
             droneServo.setPosition(DRONE_SHOOT);
             sleep(100);
             droneServo.getController().pwmDisable();
+            //droneServo.setPosition(0);
+
         }
+
+
     }
 }
 
