@@ -12,8 +12,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.IMU;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@TeleOp(name = "movement test", group = "SA_FTC")
-//@Autonomous
 public class TestAuto extends LinearOpMode {
     private final ElapsedTime runtime = new ElapsedTime();
 
@@ -26,16 +24,18 @@ public class TestAuto extends LinearOpMode {
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
     private int part = 0;
-    private DcMotor frontLeftMotor;
-    private DcMotor backLeftMotor;
-    private DcMotor frontRightMotor;
-    private DcMotor backRightMotor;
+
 
     //private DigitalChannel digital1;
     private double previousHeading = 0;
     private double integratedHeading = 0;
 
     private double currentAngle = 0;
+
+    DcMotor frontLeftMotor = null;
+    DcMotor backLeftMotor = null;
+    DcMotor frontRightMotor = null;
+    DcMotor backRightMotor = null;
 
     private final boolean debug = true;
 
@@ -64,7 +64,8 @@ public class TestAuto extends LinearOpMode {
         backRightMotor.setPower(rightBackPower);
     }
 
-    public void setPowerWithTime(double axial, double lateral, double yaw, double time) {
+
+    private void setPowerWithTime(double axial, double lateral, double yaw, double time) {
         double startTime = runtime.seconds();
         while (runtime.seconds() < startTime + time) {
             setPower(axial, lateral, yaw);
@@ -74,7 +75,7 @@ public class TestAuto extends LinearOpMode {
         sleep(100); // Resting
     }
 
-    public double calculatePower(double minPower, double maxPower, double startAngle, double targetAngle, double c, double currentPower) {
+    private double calculatePower(double minPower, double maxPower, double startAngle, double targetAngle, double c, double currentPower) {
         double slowDownAngle = targetAngle - c;
 
         double accelerationPower = minPower + ((currentAngle - startAngle) / c) * (maxPower - minPower);
@@ -101,7 +102,7 @@ public class TestAuto extends LinearOpMode {
     }
 
     private double calculatePowerLeft(double minPower, double maxPower, double startAngle, double targetAngle, double c, double currentPower) {
-            double slowDownAngle = targetAngle - c;
+        double slowDownAngle = targetAngle - c;
 
         double accelerationPower = minPower + ((currentAngle - startAngle) / c) * (maxPower - minPower);
         double slowDownPower = (currentAngle - slowDownAngle) * maxPower / c;
@@ -129,7 +130,7 @@ public class TestAuto extends LinearOpMode {
         return retPower;
     }
 
-    public void turnRight(double minPower, double maxPower, double targetAngle, double c) {
+    private void turnRight(double minPower, double maxPower, double targetAngle, double c) {
         currentAngle = getIntegratedHeading();
 
         double startAngle = currentAngle;
@@ -152,7 +153,7 @@ public class TestAuto extends LinearOpMode {
 
     }
 
-    public void turnLeft(double minPower, double maxPower, double targetAngle, double c) {
+    private void turnLeft(double minPower, double maxPower, double targetAngle, double c) {
         currentAngle = getIntegratedHeading();
         double startAngle = currentAngle;
         double power = 0;
@@ -174,7 +175,7 @@ public class TestAuto extends LinearOpMode {
 
     }
 
-    // transform the angles from (180,-179) to (inf, -inf)
+    // transform the angles from (180,-179) to (inf, -inf)w
     private double getIntegratedHeading() {
         double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         //double currentHeading = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).firstAngle;
@@ -299,13 +300,13 @@ public class TestAuto extends LinearOpMode {
         System.out.println(Math.abs(newRightTarget));
 
         if(opModeIsActive()) {
-            while ((Math.abs(frontLeftMotor.getCurrentPosition()) < Math.abs(newLeftTarget) + startFrontLeft) && Math.abs(frontRightMotor.getCurrentPosition()) < Math.abs(newRightTarget) + startFrontRight) {
+            while ((frontLeftMotor.getCurrentPosition() > -newLeftTarget + startFrontLeft) && frontRightMotor.getCurrentPosition() > -(newRightTarget) + startFrontRight) {
                 frontLeftMotor.setPower(-(speed));
                 frontRightMotor.setPower(-(speed));
                 backRightMotor.setPower(-(speed));
                 backLeftMotor.setPower(-(speed));
 
-                telemetry.addData("running to: ", newRightTarget);
+                telemetry.addData("running to: ", -newRightTarget);
                 telemetry.addData("currently at: ", frontRightMotor.getCurrentPosition());
 
                 telemetry.update();
@@ -327,14 +328,14 @@ public class TestAuto extends LinearOpMode {
     @Override
     public void runOpMode() {
         // Set motors
-        //frontLeftMotor = hardwareMap.get(DcMotor.class, "motor0");
-        //backLeftMotor = hardwareMap.get(DcMotor.class, "motor1");
-        //frontRightMotor = hardwareMap.get(DcMotor.class, "motor2");
-        //backRightMotor = hardwareMap.get(DcMotor.class, "motor3");
-        frontLeftMotor = hardwareMap.get(DcMotor.class, "front_left_motor");
-        backLeftMotor = hardwareMap.get(DcMotor.class, "back_left_motor");
-        frontRightMotor = hardwareMap.get(DcMotor.class, "front_right_motor");
-        backRightMotor = hardwareMap.get(DcMotor.class, "back_right_motor");
+        frontLeftMotor = hardwareMap.get(DcMotor.class, "motor0");
+        backLeftMotor = hardwareMap.get(DcMotor.class, "motor1");
+        frontRightMotor = hardwareMap.get(DcMotor.class, "motor2");
+        backRightMotor = hardwareMap.get(DcMotor.class, "motor3");
+        //frontLeftMotor = hardwareMap.get(DcMotor.class, "front_left_motor");
+        //backLeftMotor = hardwareMap.get(DcMotor.class, "back_left_motor");
+        //frontRightMotor = hardwareMap.get(DcMotor.class, "front_right_motor");
+        //backRightMotor = hardwareMap.get(DcMotor.class, "back_right_motor");
 
         //digital1 = hardwareMap.get(DigitalChannel.class, "digital1");
 
@@ -357,6 +358,8 @@ public class TestAuto extends LinearOpMode {
         imu.initialize(parameters);
         imu.resetYaw();
 
+        //DetectPixel detectPixel = new DetectPixel(this, hardwareMap);
+
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
@@ -369,6 +372,9 @@ public class TestAuto extends LinearOpMode {
 
         while (opModeIsActive()) {
             telemetry.addData("Status", "Running");
+
+            //detectPixel.DetectPixel();
+
             telemetry.update();
 
             //unitTestTurn();
@@ -383,17 +389,21 @@ public class TestAuto extends LinearOpMode {
             //sleep(150);
             //turnRight(0.5, 0.8, 90, 20);
             //sleep(500);
-            //straight(0.4, 50);
+
+            //turnRight(0.5, 0.8, 90, 20);
+            //sleep(150);
+            //turnLeft(0.5, 0.8, -90, -15);
+
+            //straight(0.4, 154);
             //turnLeft(0.5, 0.8, -90, 90);
             //sleep(500);
             //straight(0.4, 50);
-            turnRight(0.5, 0.8, 90, 20);
-            sleep(150);
-            //turnLeft(0.6, 0.8, -90, -15);
-            telemetry.addData("current angle", currentAngle);
-            telemetry.update();
+            //sleep(500);
+            //turnLeft(0.5, 0.8, 0, 0);
+            //telemetry.addData("current angle", currentAngle);
+            //telemetry.update();
 
-            break;
+            //break;
             //System.out.println(currentAngle);
             //setPowerWithTime(0.5, 0, 0, 1);
         }

@@ -17,8 +17,7 @@ public class Controller extends LinearOpMode {
     public void runOpMode() {
         MovementUtils movementUtils = new MovementUtils(this, hardwareMap);
         ArmUtils armUtils = new ArmUtils(this, hardwareMap);
-        DetectPixel detectPixel = new DetectPixel(this, hardwareMap);
-        DrivingAssist drivingAssist = new DrivingAssist(this, hardwareMap, detectPixel);
+        DrivingAssist drivingAssist = new DrivingAssist(this, hardwareMap);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -52,8 +51,6 @@ public class Controller extends LinearOpMode {
 
             telemetry.update();
         }
-
-        detectPixel.closeTfod();
     }
 
     public void Debug(String caption, Object value) {
