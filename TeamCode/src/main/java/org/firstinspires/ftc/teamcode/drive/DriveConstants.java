@@ -47,7 +47,7 @@ public class DriveConstants {
      * convenience. Make sure to exclude any gear ratio included in MOTOR_CONFIG from GEAR_RATIO.
      */
     public static double WHEEL_RADIUS = 1.88976; // in
-    public static double GEAR_RATIO = 13.7; // output (wheel) speed / input (motor) speed
+    public static double GEAR_RATIO = 19.2; // output (wheel) speed / input (motor) speed
     public static double TRACK_WIDTH = 16.34; // in
 
     /*
@@ -56,9 +56,9 @@ public class DriveConstants {
      * motor encoders or have elected not to use them for velocity control, these values should be
      * empirically tuned.
      */
-    public static double kV = 0.015;
-    public static double kA = 0.0035;
-    public static double kStatic = 0.01;
+    public static double kV = 1/rpmToVelocity(MAX_RPM);
+    public static double kA = 0.00199;
+    public static double kStatic = 0.01597;
 
     public static RevHubOrientationOnRobot.LogoFacingDirection LOGO_FACING_DIR = RevHubOrientationOnRobot.LogoFacingDirection.UP;
 
@@ -92,7 +92,7 @@ public class DriveConstants {
      * You are free to raise this on your own if you would like. It is best determined through experimentation.
 
      */
-    public static double MAX_VEL = 52.48180821614297;
+    public static double MAX_VEL = (MAX_RPM/60) * GEAR_RATIO * WHEEL_RADIUS * 2 * Math.PI;
     public static double MAX_ACCEL = 52.48180821614297;
     public static double MAX_ANG_VEL = Math.toRadians(184.02607784577722);
     public static double MAX_ANG_ACCEL = Math.toRadians(184.02607784577722);
