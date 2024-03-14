@@ -5,9 +5,9 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class MovementUtils {
-    final double AXIAL_SPEED = 0.5;
-    final double LATERAL_SPEED = 0.6;
-    final double YAW_SPEED = 0.5;
+    final double AXIAL_SPEED = 0.7;
+    final double LATERAL_SPEED = 0.8;
+    final double YAW_SPEED = 0.7;
     final double SLOW_MODE_MULTIPLIER = 0.4;
 
     Controller controller;
