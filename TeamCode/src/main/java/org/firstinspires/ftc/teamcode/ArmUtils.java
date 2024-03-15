@@ -151,9 +151,11 @@ public class ArmUtils {
         if (!prevChangedMode) {
             if (gamepad.dpad_up) {
                 backdropMode++;
+                gamepad.rumble(100);
             }
             else if (gamepad.dpad_down) {
                 backdropMode--;
+                gamepad.rumble(100);
             }
         }
 
