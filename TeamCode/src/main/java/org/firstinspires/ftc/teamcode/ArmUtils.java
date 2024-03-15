@@ -1,8 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-//import static java.lang.Thread.sleep;
-
-
 import static android.os.SystemClock.sleep;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -50,14 +47,12 @@ public class ArmUtils {
     // Drone
     final double DRONE_SHOOT = 0.4;
 
-    Controller controller;
-
-    DcMotor armLift = null;
-    DcMotor armExtend = null;
-    Servo rightGrip = null;
-    Servo leftGrip = null;
-    Servo rollerServo = null;
-    Servo droneServo = null;
+    DcMotor armLift;
+    DcMotor armExtend;
+    Servo rightGrip;
+    Servo leftGrip;
+    Servo rollerServo;
+    Servo droneServo;
 
     int currentArmLiftPos = 0;
 
@@ -70,9 +65,7 @@ public class ArmUtils {
     ExtendDirection sequenceDirection = ExtendDirection.UNINITIALIZED;
     boolean sequenceGotToPosition = false;
 
-    public ArmUtils(Controller controller, HardwareMap hardwareMap) {
-        this.controller = controller;
-
+    public ArmUtils(HardwareMap hardwareMap) {
         armLift = hardwareMap.dcMotor.get("armLift");
         armExtend = hardwareMap.dcMotor.get("armExtend");
         rightGrip = hardwareMap.servo.get("gripR");

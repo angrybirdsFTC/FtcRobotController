@@ -10,21 +10,16 @@ public class MovementUtils {
     final double YAW_SPEED = 0.7;
     final double SLOW_MODE_MULTIPLIER = 0.4;
 
-    Controller controller;
-
-    DcMotor frontLeftMotor = null;
-    DcMotor backLeftMotor = null;
-    DcMotor frontRightMotor = null;
-    DcMotor backRightMotor = null;
+    DcMotor frontLeftMotor;
+    DcMotor backLeftMotor;
+    DcMotor frontRightMotor;
+    DcMotor backRightMotor;
 
     double axialMultiplier;
     double lateralMultiplier;
     double yawMultiplier;
-    boolean slowModeActive = false;
 
-    public MovementUtils(Controller controller, HardwareMap hardwareMap) {
-        this.controller = controller;
-
+    public MovementUtils(HardwareMap hardwareMap) {
         frontLeftMotor = hardwareMap.get(DcMotor.class, "motor0");
         backLeftMotor = hardwareMap.get(DcMotor.class, "motor1");
         frontRightMotor = hardwareMap.get(DcMotor.class, "motor2");
@@ -37,7 +32,7 @@ public class MovementUtils {
     }
 
     void calculateMultipliers(Gamepad gamepad) {
-        boolean slowModeActive = gamepad.right_bumper;
+        boolean slowModeActive = gamepad.right_bumper || Controller.Instance.gamepad2.start;
 
         axialMultiplier = AXIAL_SPEED * (slowModeActive ? SLOW_MODE_MULTIPLIER : 1);
         lateralMultiplier = LATERAL_SPEED * (slowModeActive ? SLOW_MODE_MULTIPLIER : 1);

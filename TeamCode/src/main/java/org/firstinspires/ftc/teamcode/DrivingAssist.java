@@ -3,26 +3,20 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class DrivingAssist {
-    final int MAX_TICKS = 100;
-
     DigitalChannel leftSwitch;
     DigitalChannel rightSwitch;
     DigitalChannel led1;
     DigitalChannel led2;
 
-    Controller controller;
-
-
-    int ticksRemaining = 0;
-    //double tempSpeed = 0;
     boolean prevLeftSwitchState = false;
     boolean prevRightSwitchState = false;
 
-    public DrivingAssist(Controller controller, HardwareMap hardwareMap) {
-        this.controller = controller;
+    boolean didEndgameRumble = false;
 
+    public DrivingAssist(HardwareMap hardwareMap) {
         leftSwitch = hardwareMap.get(DigitalChannel.class, "leftSwitch");
         rightSwitch = hardwareMap.get(DigitalChannel.class, "rightSwitch");
         led1 = hardwareMap.get(DigitalChannel.class, "led1");
@@ -40,12 +34,21 @@ public class DrivingAssist {
             gamepad1.rumbleBlips(1);
             gamepad2.rumbleBlips(1);
         }
-        else if (prevRightSwitchState && !rightSwitch.getState()) {
+        if (prevRightSwitchState && !rightSwitch.getState()) {
             gamepad1.rumbleBlips(2);
             gamepad2.rumbleBlips(2);
         }
 
         prevLeftSwitchState = leftSwitch.getState();
         prevRightSwitchState = rightSwitch.getState();
+    }
+
+    public void endgameCountdown(Gamepad gamepad1, Gamepad gamepad2, ElapsedTime elapsedTime) {
+        if (elapsedTime.seconds() >= 90 && !didEndgameRumble) {
+            didEndgameRumble = true;
+
+            gamepad1.rumble(1000);
+            gamepad2.rumble(1000);
+        }
     }
 }

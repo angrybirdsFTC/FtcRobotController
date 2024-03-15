@@ -9,15 +9,19 @@ import java.util.List;
 
 @TeleOp(name = "controller movement", group = "SA_FTC")
 public class Controller extends LinearOpMode {
+    public static Controller Instance;
+
     ElapsedTime runtime = new ElapsedTime();
 
-    List<DebugData> debugDataList = new ArrayList<DebugData>();
+    List<DebugData> debugDataList = new ArrayList<>();
 
     @Override
     public void runOpMode() {
-        MovementUtils movementUtils = new MovementUtils(this, hardwareMap);
-        ArmUtils armUtils = new ArmUtils(this, hardwareMap);
-        DrivingAssist drivingAssist = new DrivingAssist(this, hardwareMap);
+        Instance = this;
+
+        MovementUtils movementUtils = new MovementUtils(hardwareMap);
+        ArmUtils armUtils = new ArmUtils(hardwareMap);
+        DrivingAssist drivingAssist = new DrivingAssist(hardwareMap);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -38,8 +42,8 @@ public class Controller extends LinearOpMode {
             armUtils.grip(gamepad2);
             armUtils.drone(gamepad1);
             armUtils.runSequences(gamepad2);
-            //drivingAssist.rumble(gamepad1, gamepad2);
             drivingAssist.gripLed(gamepad1, gamepad2);
+            drivingAssist.endgameCountdown(gamepad1, gamepad2, runtime);
 
             // Debugging
             telemetry.addData("Status", "Run Time: " + runtime.toString());
