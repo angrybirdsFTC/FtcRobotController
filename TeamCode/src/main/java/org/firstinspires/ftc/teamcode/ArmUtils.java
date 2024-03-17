@@ -145,15 +145,15 @@ public class ArmUtils {
     }
 
     public void runSequences(Gamepad gamepad) {
-        sequenceActive = startupSequenceActive || backdropSequenceActive || pickupSequenceActive;
+        sequenceActive = startupSequenceActive || pickupSequenceActive;
 
         // Backdrop Sequence Mode
         if (!prevChangedMode) {
-            if (gamepad.dpad_up) {
+            if (gamepad.dpad_up && backdropMode < BACKDROP_ARM_TARGET.length - 1) {
                 backdropMode++;
                 gamepad.rumble(100);
             }
-            else if (gamepad.dpad_down) {
+            else if (gamepad.dpad_down && backdropMode > 0) {
                 backdropMode--;
                 gamepad.rumble(100);
             }
@@ -164,9 +164,11 @@ public class ArmUtils {
         // Start Sequences
         if (!sequenceActive) {
             if (gamepad.a) {
+                stopSequences();
                 pixelPickupSequence();
             }
             else if (gamepad.y) {
+                stopSequences();
                 pixelBackdropSequence();
             }
         }
@@ -175,10 +177,10 @@ public class ArmUtils {
         if (startupSequenceActive) {
             startupSequence();
         }
-        else if (pickupSequenceActive) {
+        if (pickupSequenceActive) {
             pixelPickupSequence();
         }
-        else if (backdropSequenceActive) {
+        if (backdropSequenceActive) {
             pixelBackdropSequence();
         }
     }
