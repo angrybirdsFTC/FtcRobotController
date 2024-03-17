@@ -39,8 +39,8 @@
     -->
 
     <LynxUsbDevice
-        name="Expansion Hub Portal 1"
-        serialNumber="[...]" parentModuleAddress="5">
+        name="Control Hub Portal"
+        serialNumber="(embedded)" parentModuleAddress="5">
 
         <LynxModule name="Control Hub" port="2">
             <!-- The built-in IMU is always port="0" bus="0" -->
@@ -59,7 +59,7 @@
             <DigitalDevice name="leftSwitch" port="1" />
         </LynxModule>
 
-        <LynxModule name="Expansion Hub" port="3">
+        <LynxModule name="Expansion Hub 2" port="3">
             <goBILDA5203SeriesMotor name="armLift" port="0" />
             <goBILDA5203SeriesMotor name="armExtend" port="1" />
 
