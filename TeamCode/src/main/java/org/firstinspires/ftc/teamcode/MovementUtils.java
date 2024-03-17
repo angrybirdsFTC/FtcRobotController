@@ -31,10 +31,10 @@ public class MovementUtils {
         frontRightMotor = hardwareMap.get(DcMotor.class, "motor2");
         backRightMotor = hardwareMap.get(DcMotor.class, "motor3");
 
-        frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        frontRightMotor.setDirection(DcMotor.Direction.FORWARD);
-        backRightMotor.setDirection(DcMotor.Direction.FORWARD);
+        //frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        //backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        //frontRightMotor.setDirection(DcMotor.Direction.FORWARD);
+        //backRightMotor.setDirection(DcMotor.Direction.FORWARD);
 
         // Initialize SampleMecanumDrive
         drive = new SampleMecanumDrive(hardwareMap);
@@ -124,23 +124,15 @@ public class MovementUtils {
     }
 
     public void roadrunnerMovement(Gamepad gamepad) {
-        // Read pose
-        Pose2d poseEstimate = drive.getPoseEstimate();
-
         // Create a vector from the gamepad x/y inputs
         // Then, rotate that vector by the inverse of that heading
-        Vector2d input = new Vector2d(
-                -gamepad.left_stick_y,
-                -gamepad.left_stick_x
-        ).rotated(-poseEstimate.getHeading());
-
         // Pass in the rotated input + right stick value for rotation
         // Rotation is not part of the rotated input thus must be passed in separately
         drive.setWeightedDrivePower(
                 new Pose2d(
-                        input.getX(),
-                        input.getY(),
-                        -gamepad.right_stick_x
+                        gamepad.left_stick_y * AXIAL_SPEED,
+                        -gamepad.left_stick_x * LATERAL_SPEED,
+                        -gamepad.right_stick_x * YAW_SPEED
                 )
         );
 
