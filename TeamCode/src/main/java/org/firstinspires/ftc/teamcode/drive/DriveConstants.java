@@ -56,9 +56,9 @@ public class DriveConstants {
      * motor encoders or have elected not to use them for velocity control, these values should be
      * empirically tuned.
      */
-    public static double kV = 0.0113;
-    public static double kA = 0.00016;
-    public static double kStatic = 0.085;
+    public static double kV = 0.012;
+    public static double kA = 0.0017;
+    public static double kStatic = 0.0727;
 
     public static RevHubOrientationOnRobot.LogoFacingDirection LOGO_FACING_DIR = RevHubOrientationOnRobot.LogoFacingDirection.UP;
 
@@ -92,8 +92,8 @@ public class DriveConstants {
      * You are free to raise this on your own if you would like. It is best determined through experimentation.
 
      */
-    public static double MAX_VEL = 37.74330378369762;
-    public static double MAX_ACCEL = 62.48180821614297;
+    public static double MAX_VEL = 26.74330378369762;
+    public static double MAX_ACCEL = 28.78180821614297;
     public static double MAX_ANG_VEL = 3.211860967940206;
     public static double MAX_ANG_ACCEL = 3.211860967940206;
 
