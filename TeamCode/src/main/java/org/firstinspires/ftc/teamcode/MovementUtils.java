@@ -124,19 +124,16 @@ public class MovementUtils {
     }
 
     public void roadrunnerMovement(Gamepad gamepad) {
-        // Create a vector from the gamepad x/y inputs
-        // Then, rotate that vector by the inverse of that heading
-        // Pass in the rotated input + right stick value for rotation
-        // Rotation is not part of the rotated input thus must be passed in separately
+        calculateMultipliers(gamepad);
+
         drive.setWeightedDrivePower(
                 new Pose2d(
-                        gamepad.left_stick_y * AXIAL_SPEED,
-                        -gamepad.left_stick_x * LATERAL_SPEED,
-                        -gamepad.right_stick_x * YAW_SPEED
+                        gamepad.left_stick_y * axialMultiplier,
+                        -gamepad.left_stick_x * lateralMultiplier,
+                        -gamepad.right_stick_x * yawMultiplier
                 )
         );
 
-        // Update everything. Odometry. Etc.
         drive.update();
     }
 }
