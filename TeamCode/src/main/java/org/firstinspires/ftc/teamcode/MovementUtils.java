@@ -128,7 +128,7 @@ public class MovementUtils {
 
         drive.setWeightedDrivePower(
                 new Pose2d(
-                        gamepad.left_stick_y * axialMultiplier,
+                        -gamepad.left_stick_y * axialMultiplier,
                         -gamepad.left_stick_x * lateralMultiplier,
                         -gamepad.right_stick_x * yawMultiplier
                 )

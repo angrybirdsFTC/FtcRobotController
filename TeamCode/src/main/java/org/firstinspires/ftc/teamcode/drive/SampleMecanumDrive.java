@@ -100,10 +100,10 @@ public class SampleMecanumDrive extends MecanumDrive {
                 DriveConstants.LOGO_FACING_DIR, DriveConstants.USB_FACING_DIR));
         imu.initialize(parameters);
 
-        leftFront = hardwareMap.get(DcMotorEx.class, "motor0");
-        leftRear = hardwareMap.get(DcMotorEx.class, "motor1");
-        rightFront = hardwareMap.get(DcMotorEx.class, "motor2");
-        rightRear = hardwareMap.get(DcMotorEx.class, "motor3");
+        leftFront = hardwareMap.get(DcMotorEx.class, "motor3");
+        leftRear = hardwareMap.get(DcMotorEx.class, "motor2");
+        rightFront = hardwareMap.get(DcMotorEx.class, "motor1");
+        rightRear = hardwareMap.get(DcMotorEx.class, "motor0");
 
         motors = Arrays.asList(leftFront, leftRear, rightRear, rightFront);
 
