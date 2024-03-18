@@ -37,10 +37,9 @@ public class RR_Autonomous extends LinearOpMode {
 
         //drive.followTrajectory(trajectory1);
 
-        TrajectorySequence trajectory2 = drive.trajectorySequenceBuilder(new Pose2d(-36.33, 62.75, Math.toRadians(270.00)))
-                .splineTo(new Vector2d(-22.36, 0.85), Math.toRadians(0.47))
-                .splineTo(new Vector2d(61.43, 0.28), Math.toRadians(0.00))
-                .lineToConstantHeading(new Vector2d(61.43, 14.44))
+        TrajectorySequence trajectory2 = drive.trajectorySequenceBuilder(new Pose2d(-36.33, 62.37, Math.toRadians(-90)))
+                .splineTo(new Vector2d(-20.29, 11.23), Math.toRadians(-2.96))
+                .splineTo(new Vector2d(60.87, 12.36), Math.toRadians(0.00))
                 .build();
         drive.setPoseEstimate(trajectory2.start());
 

@@ -108,6 +108,8 @@ public class ArmUtils {
     }
 
     boolean baseSequence(int armTarget, int extendTarget, double rollerTarget, double gripTarget, boolean hasEnd) {
+        if (hasEnd) stopSequences();
+
         armLift.setPower(SEQUENCE_ARM_POWER);
         currentArmLiftPos = armTarget;
         armLift.setTargetPosition(currentArmLiftPos);
@@ -150,12 +152,12 @@ public class ArmUtils {
         // Backdrop Sequence Mode
         if (!prevChangedMode) {
             if (gamepad.dpad_up && backdropMode < BACKDROP_ARM_TARGET.length - 1) {
-                backdropMode++;
                 gamepad.rumble(100);
+                backdropMode++;
             }
             else if (gamepad.dpad_down && backdropMode > 0) {
-                backdropMode--;
                 gamepad.rumble(100);
+                backdropMode--;
             }
         }
 
@@ -164,11 +166,9 @@ public class ArmUtils {
         // Start Sequences
         if (!sequenceActive) {
             if (gamepad.a) {
-                stopSequences();
                 pixelPickupSequence();
             }
             else if (gamepad.y) {
-                stopSequences();
                 pixelBackdropSequence();
             }
         }
@@ -177,10 +177,10 @@ public class ArmUtils {
         if (startupSequenceActive) {
             startupSequence();
         }
-        if (pickupSequenceActive) {
+        else if (pickupSequenceActive) {
             pixelPickupSequence();
         }
-        if (backdropSequenceActive) {
+        else if (backdropSequenceActive) {
             pixelBackdropSequence();
         }
     }
