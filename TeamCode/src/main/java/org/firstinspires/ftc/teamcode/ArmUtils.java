@@ -74,7 +74,7 @@ public class ArmUtils {
         armExtend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         armExtend.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        armLift.setTargetPosition(ARM_MIN_POSITION);
+        armLift.setTargetPosition(0);
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armLift.setPower(ARM_LIFT_POWER);
     }
