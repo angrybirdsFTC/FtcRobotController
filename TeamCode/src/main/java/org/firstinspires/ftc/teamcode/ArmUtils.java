@@ -100,14 +100,14 @@ public class ArmUtils {
     }
 
     void pixelPickupSequence() {
-        pickupSequenceActive = baseSequence(ARM_MIN_POSITION, PICKUP_EXTEND_TARGET, ROLLER_FLAT, GRIP_OPEN);
+        pickupSequenceActive = baseSequence(ARM_MIN_POSITION, PICKUP_EXTEND_TARGET, ROLLER_FLAT, GRIP_OPEN, true);
     }
 
     void pixelBackdropSequence() {
-        backdropSequenceActive = baseSequence(BACKDROP_ARM_TARGET[backdropMode], BACKDROP_EXTEND_TARGET[backdropMode], ROLLER_FLAT, leftGrip.getPosition());
+        baseSequence(BACKDROP_ARM_TARGET[backdropMode], BACKDROP_EXTEND_TARGET[backdropMode], ROLLER_FLAT, leftGrip.getPosition(), false);
     }
 
-    boolean baseSequence(int armTarget, int extendTarget, double rollerTarget, double gripTarget) {
+    boolean baseSequence(int armTarget, int extendTarget, double rollerTarget, double gripTarget, boolean hasEnd) {
         armLift.setPower(SEQUENCE_ARM_POWER);
         currentArmLiftPos = armTarget;
         armLift.setTargetPosition(currentArmLiftPos);
@@ -131,7 +131,7 @@ public class ArmUtils {
             armExtend.setPower(0);
         }
 
-        if (!armLift.isBusy() && sequenceGotToPosition) {
+        if (hasEnd && !armLift.isBusy() && sequenceGotToPosition) {
             sequenceDirection = ExtendDirection.UNINITIALIZED;
             sequenceGotToPosition = false;
 
