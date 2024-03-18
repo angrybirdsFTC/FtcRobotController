@@ -11,7 +11,7 @@ public class ArmUtils {
     // Roller
     final double ROLLER_FLAT = 0.29;
     final double ROLLER_UPSIDEDOWN = 0.97;
-    final double ROLLER_ARM_LIMIT = 400;
+    final double ROLLER_ARM_LIMIT = 200;
 
     // Arm
     final double ARM_EXTEND_SPEED = 0.5;
