@@ -1,15 +1,20 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class DrivingAssist {
+    final double LED_POWER = 0.5;
+
     DigitalChannel leftSwitch;
     DigitalChannel rightSwitch;
     DigitalChannel led1;
     DigitalChannel led2;
+    DcMotor ledMotor;
+    DcMotor ledMotor2;
 
     boolean prevLeftSwitchState = false;
     boolean prevRightSwitchState = false;
@@ -23,11 +28,15 @@ public class DrivingAssist {
         led2 = hardwareMap.get(DigitalChannel.class, "led2");
         led1.setMode(DigitalChannel.Mode.OUTPUT);
         led2.setMode(DigitalChannel.Mode.OUTPUT);
+        ledMotor = hardwareMap.get(DcMotor.class, "ledmotor");
+        ledMotor2 = hardwareMap.get(DcMotor.class, "ledmotor2");
     }
 
     public void gripLed(Gamepad gamepad1, Gamepad gamepad2) {
         led1.setState(!leftSwitch.getState());
         led2.setState(!rightSwitch.getState());
+        ledMotor.setPower(!leftSwitch.getState() ? LED_POWER : 0);
+        ledMotor2.setPower(!rightSwitch.getState() ? LED_POWER : 0);
 
         // Check if previous state is false and current state is true
         if (prevLeftSwitchState && !leftSwitch.getState()) {
