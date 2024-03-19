@@ -24,6 +24,8 @@ _Expansion Hub:_
 Motors:
 - 0: "GoBILDA 5202/3/4" armLift
 - 1: "GoBILDA 5202/3/4" armExtend
+- 2: "Unspecified Motor" ledMotor
+- 3: "Unspecified Motor" ledMotor2
 
 Servos:
 - 0: "Servo" droneServo
