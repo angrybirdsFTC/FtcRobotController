@@ -33,8 +33,8 @@ public class ArmUtils {
     final int PICKUP_EXTEND_TARGET = 1700;
 
     // Pixel Backdrop Sequence
-    final int[] BACKDROP_EXTEND_TARGET = { 1800, 2000, 2200 };
-    final int[] BACKDROP_ARM_TARGET = { 800, 1000, 1200 };
+    final int[] BACKDROP_EXTEND_TARGET = { 1300, 1700, 2100 };
+    final int BACKDROP_ARM_TARGET = 1000;
 
     // All Sequences
     final double SEQUENCE_ARM_POWER = 0.5;
@@ -104,7 +104,7 @@ public class ArmUtils {
     }
 
     void pixelBackdropSequence() {
-        backdropSequenceActive = baseSequence(BACKDROP_ARM_TARGET[backdropMode], BACKDROP_EXTEND_TARGET[backdropMode], ROLLER_FLAT, leftGrip.getPosition());
+        backdropSequenceActive = baseSequence(BACKDROP_ARM_TARGET, BACKDROP_EXTEND_TARGET[backdropMode], ROLLER_FLAT, leftGrip.getPosition());
     }
 
     boolean baseSequence(int armTarget, int extendTarget, double rollerTarget, double gripTarget) {
@@ -149,15 +149,17 @@ public class ArmUtils {
 
         // Backdrop Sequence Mode
         if (!prevChangedMode) {
-            if (gamepad.dpad_up && backdropMode < BACKDROP_ARM_TARGET.length - 1) {
-                gamepad.rumble(200);
-                backdropMode++;
+            if (gamepad.dpad_up) {
+                if (backdropMode < BACKDROP_EXTEND_TARGET.length - 1) backdropMode++;
+
+                gamepad.rumble(150);
                 stopSequences();
                 pixelBackdropSequence();
             }
-            else if (gamepad.dpad_down && backdropMode > 0) {
-                gamepad.rumble(200);
-                backdropMode--;
+            else if (gamepad.dpad_down) {
+                if (backdropMode > 0) backdropMode--;
+
+                gamepad.rumble(150);
                 stopSequences();
                 pixelBackdropSequence();
             }
