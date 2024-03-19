@@ -100,16 +100,14 @@ public class ArmUtils {
     }
 
     void pixelPickupSequence() {
-        pickupSequenceActive = baseSequence(ARM_MIN_POSITION, PICKUP_EXTEND_TARGET, ROLLER_FLAT, GRIP_OPEN, true);
+        pickupSequenceActive = baseSequence(ARM_MIN_POSITION, PICKUP_EXTEND_TARGET, ROLLER_FLAT, GRIP_OPEN);
     }
 
     void pixelBackdropSequence() {
-        baseSequence(BACKDROP_ARM_TARGET[backdropMode], BACKDROP_EXTEND_TARGET[backdropMode], ROLLER_FLAT, leftGrip.getPosition(), false);
+        backdropSequenceActive = baseSequence(BACKDROP_ARM_TARGET[backdropMode], BACKDROP_EXTEND_TARGET[backdropMode], ROLLER_FLAT, leftGrip.getPosition());
     }
 
-    boolean baseSequence(int armTarget, int extendTarget, double rollerTarget, double gripTarget, boolean hasEnd) {
-        if (hasEnd) stopSequences();
-
+    boolean baseSequence(int armTarget, int extendTarget, double rollerTarget, double gripTarget) {
         armLift.setPower(SEQUENCE_ARM_POWER);
         currentArmLiftPos = armTarget;
         armLift.setTargetPosition(currentArmLiftPos);
@@ -133,7 +131,7 @@ public class ArmUtils {
             armExtend.setPower(0);
         }
 
-        if (hasEnd && !armLift.isBusy() && sequenceGotToPosition) {
+        if (!armLift.isBusy() && sequenceGotToPosition) {
             sequenceDirection = ExtendDirection.UNINITIALIZED;
             sequenceGotToPosition = false;
 
@@ -147,17 +145,21 @@ public class ArmUtils {
     }
 
     public void runSequences(Gamepad gamepad) {
-        sequenceActive = startupSequenceActive || pickupSequenceActive;
+        sequenceActive = startupSequenceActive || backdropSequenceActive || pickupSequenceActive;
 
         // Backdrop Sequence Mode
         if (!prevChangedMode) {
             if (gamepad.dpad_up && backdropMode < BACKDROP_ARM_TARGET.length - 1) {
                 gamepad.rumble(100);
                 backdropMode++;
+                stopSequences();
+                pixelBackdropSequence();
             }
             else if (gamepad.dpad_down && backdropMode > 0) {
                 gamepad.rumble(100);
                 backdropMode--;
+                stopSequences();
+                pixelBackdropSequence();
             }
         }
 
@@ -166,9 +168,11 @@ public class ArmUtils {
         // Start Sequences
         if (!sequenceActive) {
             if (gamepad.a) {
+                stopSequences();
                 pixelPickupSequence();
             }
             else if (gamepad.y) {
+                stopSequences();
                 pixelBackdropSequence();
             }
         }
