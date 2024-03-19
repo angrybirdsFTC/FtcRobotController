@@ -65,9 +65,9 @@ public class DetectProp extends LinearOpMode {
             "redprop"
     };
 
-    public String WhichSpike = " ";
-    private final int Xleft = 100;
-    private final int Xright = 600;
+    public String WhichSpike = "None";
+    private final int Xleft = 170;
+    private final int Xright = 500;
 
     /**
      * The variable to store our instance of the TensorFlow Object Detection processor.
@@ -177,6 +177,7 @@ public class DetectProp extends LinearOpMode {
         List<Recognition> currentRecognitions = tfod.getRecognitions();
         telemetry.addData("# Objects Detected", currentRecognitions.size());
 
+
         // Step through the list of recognitions and display info for each one.
         for (Recognition recognition : currentRecognitions) {
             double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
@@ -195,7 +196,7 @@ public class DetectProp extends LinearOpMode {
                 WhichSpike = "center";
             }
 
-            else {
+            if (x > Xright) {
                 WhichSpike = "right";
             }
         }   // end for() loop
