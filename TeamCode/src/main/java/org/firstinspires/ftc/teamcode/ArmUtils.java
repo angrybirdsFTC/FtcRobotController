@@ -150,13 +150,13 @@ public class ArmUtils {
         // Backdrop Sequence Mode
         if (!prevChangedMode) {
             if (gamepad.dpad_up && backdropMode < BACKDROP_ARM_TARGET.length - 1) {
-                gamepad.rumble(100);
+                gamepad.rumble(200);
                 backdropMode++;
                 stopSequences();
                 pixelBackdropSequence();
             }
             else if (gamepad.dpad_down && backdropMode > 0) {
-                gamepad.rumble(100);
+                gamepad.rumble(200);
                 backdropMode--;
                 stopSequences();
                 pixelBackdropSequence();
@@ -210,17 +210,17 @@ public class ArmUtils {
     }
 
     public void extend(Gamepad gamepad) {
-        if (sequenceActive) stopSequences();
-        
-        if (-armExtend.getCurrentPosition() < ARM_EXTEND_LIMIT || -gamepad.right_stick_y < 0) {
+        if (sequenceActive && gamepad.right_stick_y != 0) stopSequences();
+
+        if (-armExtend.getCurrentPosition() < ARM_EXTEND_LIMIT) {
             armExtend.setPower(-gamepad.right_stick_y * ARM_EXTEND_SPEED);
         }
         else armExtend.setPower(0);
     }
 
     public void lift(Gamepad gamepad) {
-        if (sequenceActive) stopSequences();
-        
+        if (sequenceActive && gamepad.left_stick_y != 0) stopSequences();
+
         currentArmLiftPos -= (int)(gamepad.left_stick_y * ARM_LIFT_SPEED);
         if (currentArmLiftPos < ARM_MIN_POSITION && -gamepad.left_stick_y < 0) currentArmLiftPos = ARM_MIN_POSITION;
         if (currentArmLiftPos > ARM_MAX_POSITION && -gamepad.left_stick_y > 0) currentArmLiftPos = ARM_MAX_POSITION;
