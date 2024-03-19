@@ -29,6 +29,8 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
@@ -46,23 +48,26 @@ import java.util.List;
  * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
  */
-//@TeleOp(name = "Prop Detection", group = "Concept")
-
-public class DetectProp{
+@Autonomous(name = "Prop Detection", group = "Concept")
+public class DetectProp extends LinearOpMode {
 
     private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
 
     // TFOD_MODEL_ASSET points to a model file stored in the project Asset location,
     // this is only used for Android Studio when using models in Assets.
-    private static final String TFOD_MODEL_ASSET = "Module1.tflite";
+    private static final String TFOD_MODEL_ASSET = "module2.tflite";
     // TFOD_MODEL_FILE points to a model file stored onboard the Robot Controller's storage,
     // this is used when uploading models directly to the RC using the model upload interface.
-    private static final String TFOD_MODEL_FILE = "/sdcard/FIRST/tflitemodels/Module1.tflite";
+    private static final String TFOD_MODEL_FILE = "module2.tflite";
     // Define the labels recognized in the model for TFOD (must be in training order!)
     private static final String[] LABELS = {
-            "BlueProp",
-            "RedProp"
+            "blueprop",
+            "redprop"
     };
+
+    public String WhichSpike = " ";
+    private final int Xleft = 100;
+    private final int Xright = 600;
 
     /**
      * The variable to store our instance of the TensorFlow Object Detection processor.
@@ -74,9 +79,6 @@ public class DetectProp{
      */
     private VisionPortal visionPortal;
 
-    public DetectProp(HardwareMap hardwareMap) {
-        initTfod(hardwareMap);
-    }
 
     /**
      * Initialize the TensorFlow Object Detection processor.
@@ -91,13 +93,13 @@ public class DetectProp{
                 // choose one of the following:
                 //   Use setModelAssetName() if the custom TF Model is built in as an asset (AS only).
                 //   Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
-                //.setModelAssetName(TFOD_MODEL_ASSET)
-                //.setModelFileName(TFOD_MODEL_FILE)
+                .setModelAssetName(TFOD_MODEL_ASSET)
+                //.setModelFileName(TFOD_MODEL_ASSET)
 
                 // The following default settings are available to un-comment and edit as needed to
                 // set parameters for custom models.
                 .setModelLabels(LABELS)
-                .setModelFileName(TFOD_MODEL_FILE)
+                //.setModelFileName(TFOD_MODEL_ASSET)
                 //.setIsModelTensorFlow2(true)
                 //.setIsModelQuantized(true)
                 //.setModelInputSize(300)
@@ -170,23 +172,66 @@ public class DetectProp{
     /**
      * Add telemetry about TensorFlow Object Detection (TFOD) recognitions.
      */
-    //public void telemetryTfod() {
+    private void telemetryTfod() {
 
-    //List<Recognition> currentRecognitions = tfod.getRecognitions();
-    //telemetry.addData("# Objects Detected", currentRecognitions.size());
+        List<Recognition> currentRecognitions = tfod.getRecognitions();
+        telemetry.addData("# Objects Detected", currentRecognitions.size());
 
-    // Step through the list of recognitions and display info for each one.
-    //for (Recognition recognition : currentRecognitions) {
-    //double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
-    //double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+        // Step through the list of recognitions and display info for each one.
+        for (Recognition recognition : currentRecognitions) {
+            double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
+            double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
 
-    //telemetry.addData(""," ");
-    //telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
-    //telemetry.addData("- Position", "%.0f / %.0f", x, y);
-    //  telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
-    // }   // end for() loop
+            telemetry.addData(""," ");
+            telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
+            telemetry.addData("- Position", "%.0f / %.0f", x, y);
+            telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
 
-    //}   // end method telemetryTfod()
+            if (x < Xleft) {
+                WhichSpike = "left";
+            }
+
+            if (x > Xleft && x < Xright) {
+                WhichSpike = "center";
+            }
+
+            else {
+                WhichSpike = "right";
+            }
+        }   // end for() loop
+
+    }   // end method telemetryTfod()
 
 
-}   // end class
+    @Override
+    public void runOpMode() throws InterruptedException {
+
+        initTfod(hardwareMap);
+
+        // Wait for the DS start button to be touched.
+        telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
+        telemetry.addData(">", "Touch Play to start OpMode");
+        telemetry.update();
+        waitForStart();
+
+        if (opModeIsActive()) {
+            while (opModeIsActive()) {
+
+                telemetryTfod();
+                telemetry.addData("Prop in spike: ", WhichSpike);
+                // Push telemetry to the Driver Station.
+                telemetry.update();
+
+                // Save CPU resources; can resume streaming when needed.
+                if (gamepad1.dpad_down) {
+                    visionPortal.stopStreaming();
+                } else if (gamepad1.dpad_up) {
+                    visionPortal.resumeStreaming();
+                }
+
+                // Share the CPU.
+                sleep(20);
+            }
+        }
+
+    }   }// end class
