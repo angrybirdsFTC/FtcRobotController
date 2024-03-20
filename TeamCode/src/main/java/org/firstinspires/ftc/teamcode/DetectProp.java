@@ -65,24 +65,12 @@ public class DetectProp extends LinearOpMode {
             "redprop"
     };
 
-    public String WhichSpike = "None";
-    private final int Xleft = 170;
-    private final int Xright = 500;
-
-    /**
-     * The variable to store our instance of the TensorFlow Object Detection processor.
-     */
+    private final int LEFT_X = 170;
+    private final int RIGHT_X = 500;
+    
     private TfodProcessor tfod;
-
-    /**
-     * The variable to store our instance of the vision portal.
-     */
     private VisionPortal visionPortal;
-
-
-    /**
-     * Initialize the TensorFlow Object Detection processor.
-     */
+    
     private void initTfod(HardwareMap hardwareMap) {
 
         // Create the TensorFlow processor by using a builder.
@@ -143,70 +131,50 @@ public class DetectProp extends LinearOpMode {
         // Disable or re-enable the TFOD processor at any time.
         //visionPortal.setProcessorEnabled(tfod, true);
 
-    }   // end method initTfod()
-
-
-    public double GetPropDistance() {
-
-        List<Recognition> currentRecognitions = tfod.getRecognitions();
-        double x = 0 , y = 0;
-        for (Recognition recognition : currentRecognitions) {
-
-            if (recognition.getLabel() == "RedProp") {
-                x = (recognition.getLeft() + recognition.getRight()) / 2 ;
-                y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
-            }
-
-
-            //telemetry.addData(""," ");
-            //telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
-            //telemetry.addData("- Position", "%.0f / %.0f", x, y);
-            //telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
-
-            return y;
-        }
-        return y;
-        // end for() loop
     }
 
     /**
      * Add telemetry about TensorFlow Object Detection (TFOD) recognitions.
      */
     private void telemetryTfod() {
-
         List<Recognition> currentRecognitions = tfod.getRecognitions();
         telemetry.addData("# Objects Detected", currentRecognitions.size());
 
-
         // Step through the list of recognitions and display info for each one.
         for (Recognition recognition : currentRecognitions) {
-            double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
-            double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+            double x = (recognition.getLeft() + recognition.getRight()) / 2;
+            double y = (recognition.getTop()  + recognition.getBottom()) / 2;
 
             telemetry.addData(""," ");
             telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
             telemetry.addData("- Position", "%.0f / %.0f", x, y);
             telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
+            telemetry.addData("Prop spike position: ", getSpikePosition());
+        }
+    }
 
-            if (x < Xleft) {
-                WhichSpike = "left";
+    public SpikePosition getSpikePosition() {
+        List<Recognition> currentRecognitions = tfod.getRecognitions();
+
+        for (Recognition recognition : currentRecognitions) {
+            double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
+
+            if (x <= LEFT_X) {
+                return SpikePosition.LEFT;
             }
-
-            if (x > Xleft && x < Xright) {
-                WhichSpike = "center";
+            else if (x > LEFT_X && x < RIGHT_X) {
+                return SpikePosition.CENTER;
             }
-
-            if (x > Xright) {
-                WhichSpike = "right";
+            else if (x >= RIGHT_X) {
+                return SpikePosition.RIGHT;
             }
-        }   // end for() loop
+        }
 
-    }   // end method telemetryTfod()
-
+        return SpikePosition.NONE;
+    }
 
     @Override
-    public void runOpMode() throws InterruptedException {
-
+    public void runOpMode() {
         initTfod(hardwareMap);
 
         // Wait for the DS start button to be touched.
@@ -215,24 +183,28 @@ public class DetectProp extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
-        if (opModeIsActive()) {
-            while (opModeIsActive()) {
+        while (opModeIsActive()) {
+            telemetryTfod();
 
-                telemetryTfod();
-                telemetry.addData("Prop in spike: ", WhichSpike);
-                // Push telemetry to the Driver Station.
-                telemetry.update();
+            // Push telemetry to the Driver Station.
+            telemetry.update();
 
-                // Save CPU resources; can resume streaming when needed.
-                if (gamepad1.dpad_down) {
-                    visionPortal.stopStreaming();
-                } else if (gamepad1.dpad_up) {
-                    visionPortal.resumeStreaming();
-                }
-
-                // Share the CPU.
-                sleep(20);
+            // Save CPU resources; can resume streaming when needed.
+            if (gamepad1.dpad_down) {
+                visionPortal.stopStreaming();
+            } else if (gamepad1.dpad_up) {
+                visionPortal.resumeStreaming();
             }
-        }
 
-    }   }// end class
+            // Share the CPU.
+            sleep(20);
+        }
+    }
+
+    public enum SpikePosition {
+        NONE,
+        LEFT,
+        RIGHT,
+        CENTER
+    }
+}
