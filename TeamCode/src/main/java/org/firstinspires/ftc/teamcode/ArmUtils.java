@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import static android.os.SystemClock.sleep;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -48,6 +49,8 @@ public class ArmUtils {
     Servo leftGrip;
     Servo rollerServo;
     Servo droneServo;
+    DigitalChannel leftSwitch;
+    DigitalChannel rightSwitch;
 
     int currentArmLiftPos = 0;
 
@@ -69,6 +72,8 @@ public class ArmUtils {
         leftGrip = hardwareMap.servo.get("gripL");
         rollerServo = hardwareMap.servo.get("roll");
         droneServo = hardwareMap.servo.get("droneServo");
+        leftSwitch = hardwareMap.digitalChannel.get("leftSwitch");
+        rightSwitch = hardwareMap.digitalChannel.get("rightSwitch");
 
         rightGrip.setDirection(Servo.Direction.REVERSE);
         armExtend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -100,19 +105,22 @@ public class ArmUtils {
     }
 
     void pixelPickupSequence() {
-        pickupSequenceActive = baseSequence(ARM_MIN_POSITION, PICKUP_EXTEND_TARGET, ROLLER_FLAT, GRIP_OPEN);
+        double leftGripTarget = !leftSwitch.getState() ? GRIP_CLOSED : GRIP_OPEN;
+        double rightGripTarget = !rightSwitch.getState() ? GRIP_CLOSED : GRIP_OPEN;
+
+        pickupSequenceActive = baseSequence(ARM_MIN_POSITION, PICKUP_EXTEND_TARGET, ROLLER_FLAT, leftGripTarget, rightGripTarget);
     }
 
     void pixelBackdropSequence() {
-        backdropSequenceActive = baseSequence(BACKDROP_ARM_TARGET, BACKDROP_EXTEND_TARGET[backdropMode], ROLLER_FLAT, leftGrip.getPosition());
+        backdropSequenceActive = baseSequence(BACKDROP_ARM_TARGET, BACKDROP_EXTEND_TARGET[backdropMode], ROLLER_FLAT, leftGrip.getPosition(), rightGrip.getPosition());
     }
 
-    boolean baseSequence(int armTarget, int extendTarget, double rollerTarget, double gripTarget) {
+    boolean baseSequence(int armTarget, int extendTarget, double rollerTarget, double leftGripTarget, double rightGripTarget) {
         armLift.setPower(SEQUENCE_ARM_POWER);
         currentArmLiftPos = armTarget;
         armLift.setTargetPosition(currentArmLiftPos);
-        leftGrip.setPosition(gripTarget);
-        rightGrip.setPosition(gripTarget);
+        leftGrip.setPosition(leftGripTarget);
+        rightGrip.setPosition(rightGripTarget);
         rollerServo.setPosition(rollerTarget);
 
         if (!sequenceGotToPosition) {
