@@ -10,22 +10,22 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 public class ArmUtils {
     // Roller
-    final double ROLLER_FLAT = 0.29;
-    final double ROLLER_UPSIDEDOWN = 0.97;
-    final double ROLLER_ARM_LIMIT = 200;
+    public static final double ROLLER_FLAT = 0.29;
+    public static final double ROLLER_UPSIDEDOWN = 0.97;
+    public static final double ROLLER_ARM_LIMIT = 200;
 
     // Arm
-    final double ARM_EXTEND_SPEED = 0.5;
-    final double ARM_LIFT_SPEED = 40;
-    final double ARM_LIFT_POWER = 0.6;
-    final int ARM_MAX_POSITION = 3200;
-    final int ARM_MIN_POSITION = -200;
-    final int ARM_EXTEND_LIMIT = 3600;
+    public static final double ARM_EXTEND_SPEED = 0.5;
+    public static final double ARM_LIFT_SPEED = 40;
+    public static final double ARM_LIFT_POWER = 0.6;
+    public static final int ARM_MAX_POSITION = 3200;
+    public static final int ARM_MIN_POSITION = -200;
+    public static final int ARM_EXTEND_LIMIT = 3600;
 
     // Grip
-    final double GRIP_OPEN = 0.5;
-    final double GRIP_CLOSED = 0.2;
-    final double GRIP_TRIGGER_THRESHOLD = 0.1;
+    public static final double GRIP_OPEN = 0.5;
+    public static final double GRIP_CLOSED = 0.2;
+    public static final double GRIP_TRIGGER_THRESHOLD = 0.1;
 
     // Startup Sequence
     final int ARM_LIFT_POSITION = 400;
@@ -34,8 +34,8 @@ public class ArmUtils {
     final int PICKUP_EXTEND_TARGET = 1700;
 
     // Pixel Backdrop Sequence
-    final int[] BACKDROP_EXTEND_TARGET = { 1300, 1700, 2100 };
-    final int BACKDROP_ARM_TARGET = 1000;
+    public static final int[] BACKDROP_EXTEND_TARGET = { 1300, 1700, 2100 };
+    public static final int BACKDROP_ARM_TARGET = 1000;
 
     // All Sequences
     final double SEQUENCE_ARM_POWER = 0.5;

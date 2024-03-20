@@ -1,16 +1,24 @@
 package org.firstinspires.ftc.teamcode;
 
-import androidx.appcompat.widget.VectorEnabledTintResources;
-
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Roadrunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.Roadrunner.trajectorysequence.TrajectorySequence;
 
 public abstract class MainAutonomous extends LinearOpMode {
+    final double TILE_SIZE = 23.4;
+    final double ROBOT_SIZE = 18;
+
+    // Go to prop
+    final double SPIKE_Y = 32;
+    final double SPIKE_SIDE_X = 3;
+    final double PIXEL_RELEASE_OFFSET = -0.1;
+
     protected enum Alliance {
         RED,
         BLUE
@@ -25,40 +33,97 @@ public abstract class MainAutonomous extends LinearOpMode {
 
     private final ElapsedTime runtime = new ElapsedTime();
 
+    DcMotor armLift;
+    DcMotor armExtend;
+    Servo rightGrip;
+    Servo leftGrip;
+    Servo rollerServo;
+
     SampleMecanumDrive drive;
+    DetectProp detectProp;
+
+    double advanceToZero(double pos, double distance) {
+        return pos - Math.signum(pos) * distance;
+    }
 
     void runAutonomous(Pose2d startingPosition) {
-        // TODO: Detect prop
+        // Detect prop
+        DetectProp.SpikePosition spikePosition;
+        do {
+            spikePosition = detectProp.getSpikePosition();
+        } while (spikePosition == DetectProp.SpikePosition.NONE);
 
-        // Center
-        TrajectorySequence goToSpikeCenter = drive.trajectorySequenceBuilder(startingPosition)
-                .lineToConstantHeading(new Vector2d(startingPosition.getX(), 32.84)) // y - 32.84 
+        // Go to prop
+        double posX = startingPosition.getX();
+        double posY = startingPosition.getY();
+        double rot = startingPosition.getHeading();
+
+        if (spikePosition == DetectProp.SpikePosition.CENTER) {
+            posY = advanceToZero(posY, SPIKE_Y);
+        }
+        else if (spikePosition == DetectProp.SpikePosition.LEFT) {
+            posY = advanceToZero(posY, SPIKE_Y);
+
+            if (alliance() == Alliance.BLUE) {
+                posX += SPIKE_SIDE_X;
+                rot = Math.toRadians(0);
+            }
+            else if (alliance() == Alliance.RED) {
+                posX -= SPIKE_SIDE_X;
+                rot = Math.toRadians(180);
+            }
+        }
+        else if (spikePosition == DetectProp.SpikePosition.RIGHT) {
+            posY = advanceToZero(posY, SPIKE_Y);
+
+            if (alliance() == Alliance.BLUE) {
+                posX -= SPIKE_SIDE_X;
+                rot = Math.toRadians(180);
+            }
+            else if (alliance() == Alliance.RED) {
+                posX += SPIKE_SIDE_X;
+                rot = Math.toRadians(0);
+            }
+        }
+
+        TrajectorySequence trajectorySequence = drive.trajectorySequenceBuilder(startingPosition)
+                .splineTo(new Vector2d(posX, posY), rot)
+                .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN))
                 .build();
-        drive.setPoseEstimate(goToSpikeCenter.start());
+        drive.setPoseEstimate(trajectorySequence.start());
     }
 
     @Override
     public void runOpMode() {
+        // Initialize
         drive = new SampleMecanumDrive(hardwareMap);
+        detectProp = new DetectProp(hardwareMap);
 
-        double startingX;
-        double startingY;
-        double startingRotation;
+        armLift = hardwareMap.dcMotor.get("armLift");
+        armExtend = hardwareMap.dcMotor.get("armExtend");
+        rightGrip = hardwareMap.servo.get("gripR");
+        leftGrip = hardwareMap.servo.get("gripL");
+        rollerServo = hardwareMap.servo.get("roll");
+
+        // Calculate starting position
+        double startingX = 0;
+        double startingY = 0;
+        double startingRotation = 0;
 
         if (initialPosition() == InitialPosition.FRONT) {
-            startingX = 11.44;
+            startingX = TILE_SIZE / 2;
         }
-        else {
-            startingX = -36.3;
+        else if (initialPosition() == InitialPosition.REAR) {
+            startingX = -(TILE_SIZE * 1.5);
         }
 
-        if (alliance() == Alliance.RED) {
-            startingY = -63.32;
-            startingRotation = Math.toRadians(90);
-        }
-        else {
-            startingY = 63.32;
+        if (alliance() == Alliance.BLUE) {
+            startingY = 70 - ROBOT_SIZE / 2;
             startingRotation = Math.toRadians(270);
+        }
+        else if (alliance() == Alliance.RED) {
+            startingY = -70 + ROBOT_SIZE / 2;
+            startingRotation = Math.toRadians(90);
         }
 
         Pose2d startPose = new Pose2d(startingX, startingY, startingRotation);

@@ -41,16 +41,8 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.List;
 
-/*
- * This OpMode illustrates the basics of TensorFlow Object Detection,
- * including Java Builder structures for specifying Vision parameters.
- *
- * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
- */
-@Autonomous(name = "Prop Detection", group = "Concept")
+@Autonomous(name = "Prop Detection")
 public class DetectProp extends LinearOpMode {
-
     private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
 
     // TFOD_MODEL_ASSET points to a model file stored in the project Asset location,
@@ -70,12 +62,14 @@ public class DetectProp extends LinearOpMode {
     
     private TfodProcessor tfod;
     private VisionPortal visionPortal;
-    
-    private void initTfod(HardwareMap hardwareMap) {
 
+    public DetectProp(HardwareMap hardwareMap) {
+        initTfod(hardwareMap);
+    }
+
+    private void initTfod(HardwareMap hardwareMap) {
         // Create the TensorFlow processor by using a builder.
         tfod = new TfodProcessor.Builder()
-
                 // With the following lines commented out, the default TfodProcessor Builder
                 // will load the default model for the season. To define a custom model to load,
                 // choose one of the following:
