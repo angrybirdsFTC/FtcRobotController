@@ -16,7 +16,7 @@ public abstract class MainAutonomous extends LinearOpMode {
     final double ROBOT_SIZE = 18;
 
     // Go to prop
-    final double SPIKE_Y = 32; // The spike's Y position
+    final double SPIKE_Y = 32; // Y distance to spike
     final double SPIKE_SIDE_X = 3; // How much to move to spike's side
     final double PIXEL_RELEASE_OFFSET = -0.1; // Offset when to release pixel
 
@@ -120,19 +120,19 @@ public abstract class MainAutonomous extends LinearOpMode {
         TrajectorySequence trajectorySequence;
         if (initialPosition() == InitialPosition.FRONT) {
             trajectorySequence = drive.trajectorySequenceBuilder(startingPosition)
-                    .lineTo(new Vector2d(spikeCenterX, backdropPosY))
-                    .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot)
-                    .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN))
+                    .lineTo(new Vector2d(spikeCenterX, backdropPosY)) // Go to spike center
+                    .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot) // Go to specific position on spike
+                    .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN)) // Release pixel
                     .waitSeconds(WAIT_BEFORE_BACKDROP)
-                    .UNSTABLE_addTemporalMarkerOffset(FRONT_ARM_SEQUENCE_OFFSET, () -> {
+                    .UNSTABLE_addTemporalMarkerOffset(FRONT_ARM_SEQUENCE_OFFSET, () -> { // Prepare arm for backdrop
                         armTarget = ArmUtils.BACKDROP_ARM_TARGET;
                         extendTarget = ArmUtils.BACKDROP_EXTEND_TARGET[0];
                         rollerTarget = ArmUtils.ROLLER_FLAT;
                         leftGripTarget = leftGrip.getPosition();
                         rightGripTarget = rightGrip.getPosition();
                     })
-                    .lineToLinearHeading(backdropPose)
-                    .addDisplacementMarker(() -> {
+                    .lineToLinearHeading(backdropPose) // Go to backdrop
+                    .addDisplacementMarker(() -> { // Lower arm
                         armTarget = ARM_SEQUENCE_TARGET;
                         extendTarget = ArmUtils.BACKDROP_EXTEND_TARGET[0];
                         rollerTarget = ArmUtils.ROLLER_FLAT;
@@ -140,7 +140,7 @@ public abstract class MainAutonomous extends LinearOpMode {
                         rightGripTarget = rightGrip.getPosition();
                     })
                     .waitSeconds(WAIT_BEFORE_RELEASE)
-                    .addDisplacementMarker(() -> {
+                    .addDisplacementMarker(() -> { // Release pixel
                         armTarget = ARM_SEQUENCE_TARGET;
                         extendTarget = ArmUtils.BACKDROP_EXTEND_TARGET[0];
                         rollerTarget = ArmUtils.ROLLER_FLAT;
@@ -148,33 +148,33 @@ public abstract class MainAutonomous extends LinearOpMode {
                         rightGripTarget = ArmUtils.GRIP_OPEN;
                     })
                     .waitSeconds(WAIT_AFTER_RELEASE)
-                    .UNSTABLE_addTemporalMarkerOffset(RESET_ARM_OFFSET, () -> {
+                    .UNSTABLE_addTemporalMarkerOffset(RESET_ARM_OFFSET, () -> { // Put down arm
                         armTarget = -200;
                         extendTarget = 0;
                         rollerTarget = ArmUtils.ROLLER_FLAT;
                         leftGripTarget = leftGrip.getPosition();
                         rightGripTarget = rightGrip.getPosition();
                     })
-                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY))
-                    .lineTo(new Vector2d(parkX, parkIntermediateY))
+                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY)) // Strafe to the side
+                    .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
                     .build();
         }
         else {
             trajectorySequence = drive.trajectorySequenceBuilder(startingPosition)
-                    .lineTo(new Vector2d(spikeCenterX, backdropPosY))
-                    .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot)
-                    .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN))
+                    .lineTo(new Vector2d(spikeCenterX, backdropPosY)) // Go to spike center
+                    .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot) // Go to specific position on spike
+                    .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN)) // Release pixel
                     .waitSeconds(WAIT_BEFORE_BACKDROP)
-                    .lineToLinearHeading(new Pose2d(spikeCenterX, backdropPosY, Math.toRadians(0.00)))
-                    .UNSTABLE_addTemporalMarkerOffset(REAR_ARM_SEQUENCE_OFFSET, () -> {
+                    .lineToLinearHeading(new Pose2d(spikeCenterX, backdropPosY, Math.toRadians(0.00))) // Go to center of spike
+                    .UNSTABLE_addTemporalMarkerOffset(REAR_ARM_SEQUENCE_OFFSET, () -> { // Prepare arm for backdrop
                         armTarget = ArmUtils.BACKDROP_ARM_TARGET;
                         extendTarget = ArmUtils.BACKDROP_EXTEND_TARGET[0];
                         rollerTarget = ArmUtils.ROLLER_FLAT;
                         leftGripTarget = leftGrip.getPosition();
                         rightGripTarget = rightGrip.getPosition();
                     })
-                    .lineToLinearHeading(backdropPose)
-                    .addDisplacementMarker(() -> {
+                    .lineToLinearHeading(backdropPose) // Go to backdrop
+                    .addDisplacementMarker(() -> { // Lower arm
                         armTarget = ARM_SEQUENCE_TARGET;
                         extendTarget = ArmUtils.BACKDROP_EXTEND_TARGET[0];
                         rollerTarget = ArmUtils.ROLLER_FLAT;
@@ -182,7 +182,7 @@ public abstract class MainAutonomous extends LinearOpMode {
                         rightGripTarget = rightGrip.getPosition();
                     })
                     .waitSeconds(WAIT_BEFORE_RELEASE)
-                    .addDisplacementMarker(() -> {
+                    .addDisplacementMarker(() -> { // Release pixel
                         armTarget = ARM_SEQUENCE_TARGET;
                         extendTarget = ArmUtils.BACKDROP_EXTEND_TARGET[0];
                         rollerTarget = ArmUtils.ROLLER_FLAT;
@@ -190,15 +190,15 @@ public abstract class MainAutonomous extends LinearOpMode {
                         rightGripTarget = ArmUtils.GRIP_OPEN;
                     })
                     .waitSeconds(WAIT_AFTER_RELEASE)
-                    .UNSTABLE_addTemporalMarkerOffset(RESET_ARM_OFFSET, () -> {
+                    .UNSTABLE_addTemporalMarkerOffset(RESET_ARM_OFFSET, () -> { // Put down arm
                         armTarget = -200;
                         extendTarget = 0;
                         rollerTarget = ArmUtils.ROLLER_FLAT;
                         leftGripTarget = leftGrip.getPosition();
                         rightGripTarget = rightGrip.getPosition();
                     })
-                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY))
-                    .lineTo(new Vector2d(parkX, parkIntermediateY))
+                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY)) // Strafe to the side
+                    .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
                     .build();
         }
 

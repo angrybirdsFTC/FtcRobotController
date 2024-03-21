@@ -165,7 +165,6 @@ public class MeepMeepTesting {
                     .setStartPose(startingPosition)
                     .followTrajectorySequence(drive ->
                             drive.trajectorySequenceBuilder(startingPosition)
-                                    .addSpatialMarker(new Vector2d(20, backdropPosY), () -> {})
                                     .lineTo(new Vector2d(spikeCenterX, backdropPosY))
                                     .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot)
                                     .waitSeconds(WAIT_BEFORE_BACKDROP)
