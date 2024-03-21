@@ -23,20 +23,29 @@ public class MeepMeepTesting {
     }
 
     static Alliance alliance() {
-        return Alliance.RED;
+        return Alliance.BLUE;
     }
     static InitialPosition initialPosition() {
-        return InitialPosition.REAR;
+        return InitialPosition.FRONT;
     }
-    static SpikePosition spikePosition = SpikePosition.LEFT;
+    static SpikePosition spikePosition = SpikePosition.RIGHT;
 
     static final double TILE_SIZE = 23.4;
     static final double STAGE_SIZE = 70.3;
     static final double ROBOT_SIZE = 18;
 
     // Go to prop
-    static final double SPIKE_Y = 32;
-    static final double SPIKE_SIDE_X = 3;
+    static final double SPIKE_Y = 32; // The spike's Y position
+    static final double SPIKE_SIDE_X = 3; // How much to move to spike's side
+    static final double PIXEL_RELEASE_OFFSET = -0.1; // Offset when to release pixel
+
+    // Backdrop
+    static final double WAIT_BEFORE_BACKDROP = 1; // Time to wait before going to backdrop
+    static final double ARM_SEQUENCE_OFFSET = 4.5; // Offset when to start preparing arm for placing pixel on backdrop
+    static final int ARM_SEQUENCE_TARGET = 500; // Arm lift target
+    static final double WAIT_BEFORE_RELEASE = 2; // How much time to wait before releasing pixel
+    static final double WAIT_AFTER_RELEASE = 0.5; // How much time to wait after releasing pixel
+    static final double RESET_ARM_OFFSET = 1; // Offset when to start putting arm down
 
     static double advanceToZero(double pos, double distance) {
         return pos - Math.signum(pos) * distance;
@@ -122,6 +131,10 @@ public class MeepMeepTesting {
 
         double spikeCenterX = startingPosition.getX();
 
+        // Park
+        double parkIntermediateY = advanceToZero(backdropPosY, TILE_SIZE);
+        double parkX = STAGE_SIZE - TILE_SIZE / 2;
+
         double finalSpikePosX = spikePosX;
         double finalSpikePosY = spikePosY;
         double finalSpikeRot = spikeRot;
@@ -136,8 +149,12 @@ public class MeepMeepTesting {
                             drive.trajectorySequenceBuilder(startingPosition)
                                     .lineTo(new Vector2d(spikeCenterX, backdropPosY))
                                     .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot)
-                                    .waitSeconds(1)
+                                    .waitSeconds(WAIT_BEFORE_BACKDROP)
                                     .lineToLinearHeading(backdropPose)
+                                    .waitSeconds(WAIT_BEFORE_RELEASE)
+                                    .waitSeconds(WAIT_AFTER_RELEASE)
+                                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY))
+                                    .lineTo(new Vector2d(parkX, parkIntermediateY))
                                     .build()
                     );
         }
@@ -148,11 +165,16 @@ public class MeepMeepTesting {
                     .setStartPose(startingPosition)
                     .followTrajectorySequence(drive ->
                             drive.trajectorySequenceBuilder(startingPosition)
+                                    .addSpatialMarker(new Vector2d(20, backdropPosY), () -> {})
                                     .lineTo(new Vector2d(spikeCenterX, backdropPosY))
                                     .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot)
-                                    .waitSeconds(1)
+                                    .waitSeconds(WAIT_BEFORE_BACKDROP)
                                     .lineToLinearHeading(new Pose2d(spikeCenterX, backdropPosY, Math.toRadians(0.00)))
                                     .lineToLinearHeading(backdropPose)
+                                    .waitSeconds(WAIT_BEFORE_RELEASE)
+                                    .waitSeconds(WAIT_AFTER_RELEASE)
+                                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY))
+                                    .lineTo(new Vector2d(parkX, parkIntermediateY))
                                     .build()
                     );
         }

@@ -264,10 +264,10 @@ public class ArmUtils {
             sleep(100);
         }
     }
-}
 
-enum ExtendDirection {
-    UNINITIALIZED,
-    FORWARD,
-    BACKWARD
+    public enum ExtendDirection {
+        UNINITIALIZED,
+        FORWARD,
+        BACKWARD
+    }
 }
