@@ -12,6 +12,7 @@ import org.firstinspires.ftc.teamcode.Roadrunner.trajectorysequence.TrajectorySe
 
 public abstract class MainAutonomous extends LinearOpMode {
     final double TILE_SIZE = 23.4;
+    final double STAGE_SIZE = 70.3;
     final double ROBOT_SIZE = 18;
 
     // Go to prop
@@ -54,43 +55,68 @@ public abstract class MainAutonomous extends LinearOpMode {
         } while (spikePosition == DetectProp.SpikePosition.NONE);
 
         // Go to prop
-        double posX = startingPosition.getX();
-        double posY = startingPosition.getY();
-        double rot = startingPosition.getHeading();
+        double spikePosX = startingPosition.getX();
+        double spikePosY = startingPosition.getY();
+        double spikeRot = startingPosition.getHeading();
 
         if (spikePosition == DetectProp.SpikePosition.CENTER) {
-            posY = advanceToZero(posY, SPIKE_Y);
+            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
         }
         else if (spikePosition == DetectProp.SpikePosition.LEFT) {
-            posY = advanceToZero(posY, SPIKE_Y);
+            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
 
             if (alliance() == Alliance.BLUE) {
-                posX += SPIKE_SIDE_X;
-                rot = Math.toRadians(0);
+                spikePosX += SPIKE_SIDE_X;
+                spikeRot = Math.toRadians(0);
             }
             else if (alliance() == Alliance.RED) {
-                posX -= SPIKE_SIDE_X;
-                rot = Math.toRadians(180);
+                spikePosX -= SPIKE_SIDE_X;
+                spikeRot = Math.toRadians(180);
             }
         }
         else if (spikePosition == DetectProp.SpikePosition.RIGHT) {
-            posY = advanceToZero(posY, SPIKE_Y);
+            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
 
             if (alliance() == Alliance.BLUE) {
-                posX -= SPIKE_SIDE_X;
-                rot = Math.toRadians(180);
+                spikePosX -= SPIKE_SIDE_X;
+                spikeRot = Math.toRadians(180);
             }
             else if (alliance() == Alliance.RED) {
-                posX += SPIKE_SIDE_X;
-                rot = Math.toRadians(0);
+                spikePosX += SPIKE_SIDE_X;
+                spikeRot = Math.toRadians(0);
             }
         }
 
-        TrajectorySequence trajectorySequence = drive.trajectorySequenceBuilder(startingPosition)
-                .splineTo(new Vector2d(posX, posY), rot)
-                .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN))
-                .build();
+        // Go to backdrop
+        double backdropPosX = STAGE_SIZE - TILE_SIZE;
+        double backdropPosY = advanceToZero(alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE, TILE_SIZE * 1.5);
+        Pose2d backdropPose = new Pose2d(backdropPosX, backdropPosY, Math.toRadians(0.00));
+
+        double spikeCenterX = startingPosition.getX();
+
+        TrajectorySequence trajectorySequence;
+        if (initialPosition() == InitialPosition.FRONT) {
+            trajectorySequence = drive.trajectorySequenceBuilder(startingPosition)
+                    .lineTo(new Vector2d(spikeCenterX, backdropPosY))
+                    .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot)
+                    .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN))
+                    .waitSeconds(1)
+                    .lineToLinearHeading(backdropPose)
+                    .build();
+        }
+        else {
+            trajectorySequence = drive.trajectorySequenceBuilder(startingPosition)
+                    .lineTo(new Vector2d(spikeCenterX, backdropPosY))
+                    .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot)
+                    .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN))
+                    .waitSeconds(1)
+                    .lineToLinearHeading(new Pose2d(spikeCenterX, backdropPosY, Math.toRadians(0.00)))
+                    .lineToLinearHeading(backdropPose)
+                    .build();
+        }
+
         drive.setPoseEstimate(trajectorySequence.start());
+        drive.followTrajectorySequence(trajectorySequence);
     }
 
     @Override
@@ -118,11 +144,11 @@ public abstract class MainAutonomous extends LinearOpMode {
         }
 
         if (alliance() == Alliance.BLUE) {
-            startingY = 70 - ROBOT_SIZE / 2;
+            startingY = STAGE_SIZE - ROBOT_SIZE / 2;
             startingRotation = Math.toRadians(270);
         }
         else if (alliance() == Alliance.RED) {
-            startingY = -70 + ROBOT_SIZE / 2;
+            startingY = -STAGE_SIZE + ROBOT_SIZE / 2;
             startingRotation = Math.toRadians(90);
         }
 

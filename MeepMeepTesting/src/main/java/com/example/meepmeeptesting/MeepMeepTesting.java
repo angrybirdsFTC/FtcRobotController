@@ -26,11 +26,12 @@ public class MeepMeepTesting {
         return Alliance.RED;
     }
     static InitialPosition initialPosition() {
-        return InitialPosition.FRONT;
+        return InitialPosition.REAR;
     }
     static SpikePosition spikePosition = SpikePosition.LEFT;
 
     static final double TILE_SIZE = 23.4;
+    static final double STAGE_SIZE = 70.3;
     static final double ROBOT_SIZE = 18;
 
     // Go to prop
@@ -80,50 +81,81 @@ public class MeepMeepTesting {
         Pose2d startingPosition = new Pose2d(startingX, startingY, startingRotation);
 
         // Go to prop
-        double posX = startingPosition.getX();
-        double posY = startingPosition.getY();
-        double rot = startingPosition.getHeading();
+        double spikePosX = startingPosition.getX();
+        double spikePosY = startingPosition.getY();
+        double spikeRot = startingPosition.getHeading();
 
         if (spikePosition == SpikePosition.CENTER) {
-            posY = advanceToZero(posY, SPIKE_Y);
+            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
         }
         else if (spikePosition == SpikePosition.LEFT) {
-            posY = advanceToZero(posY, SPIKE_Y);
+            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
 
             if (alliance() == Alliance.BLUE) {
-                posX += SPIKE_SIDE_X;
-                rot = Math.toRadians(0);
+                spikePosX += SPIKE_SIDE_X;
+                spikeRot = Math.toRadians(0);
             }
             else if (alliance() == Alliance.RED) {
-                posX -= SPIKE_SIDE_X;
-                rot = Math.toRadians(180);
+                spikePosX -= SPIKE_SIDE_X;
+                spikeRot = Math.toRadians(180);
             }
         }
         else if (spikePosition == SpikePosition.RIGHT) {
-            posY = advanceToZero(posY, SPIKE_Y);
+            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
 
             if (alliance() == Alliance.BLUE) {
-                posX -= SPIKE_SIDE_X;
-                rot = Math.toRadians(180);
+                spikePosX -= SPIKE_SIDE_X;
+                spikeRot = Math.toRadians(180);
             }
             else if (alliance() == Alliance.RED) {
-                posX += SPIKE_SIDE_X;
-                rot = Math.toRadians(0);
+                spikePosX += SPIKE_SIDE_X;
+                spikeRot = Math.toRadians(0);
             }
+        } else {
+            spikePosY = startingPosition.getY();
         }
 
-        double finalPosX = posX;
-        double finalPosY = posY;
-        double finalRot = rot;
-        RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
-                // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-                .setConstraints(26.74330378369762, 28.78180821614297, 3.211860967940206, 3.211860967940206, 21.77)
-                .setStartPose(startingPosition)
-                .followTrajectorySequence(drive ->
-                        drive.trajectorySequenceBuilder(startingPosition)
-                                .splineTo(new Vector2d(finalPosX, finalPosY), finalRot)
-                                .build()
-                );
+        // Go to backdrop
+        double backdropPosX = STAGE_SIZE - TILE_SIZE;
+        double backdropPosY = advanceToZero(alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE, TILE_SIZE * 1.5);
+        Pose2d backdropPose = new Pose2d(backdropPosX, backdropPosY, Math.toRadians(0.00));
+
+        double spikeCenterX = startingPosition.getX();
+
+        double finalSpikePosX = spikePosX;
+        double finalSpikePosY = spikePosY;
+        double finalSpikeRot = spikeRot;
+
+        RoadRunnerBotEntity myBot;
+        if (initialPosition() == InitialPosition.FRONT) {
+            myBot = new DefaultBotBuilder(meepMeep)
+                    // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                    .setConstraints(26.74330378369762, 28.78180821614297, 3.211860967940206, 3.211860967940206, 21.77)
+                    .setStartPose(startingPosition)
+                    .followTrajectorySequence(drive ->
+                            drive.trajectorySequenceBuilder(startingPosition)
+                                    .lineTo(new Vector2d(spikeCenterX, backdropPosY))
+                                    .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot)
+                                    .waitSeconds(1)
+                                    .lineToLinearHeading(backdropPose)
+                                    .build()
+                    );
+        }
+        else {
+            myBot = new DefaultBotBuilder(meepMeep)
+                    // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                    .setConstraints(26.74330378369762, 28.78180821614297, 3.211860967940206, 3.211860967940206, 21.77)
+                    .setStartPose(startingPosition)
+                    .followTrajectorySequence(drive ->
+                            drive.trajectorySequenceBuilder(startingPosition)
+                                    .lineTo(new Vector2d(spikeCenterX, backdropPosY))
+                                    .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot)
+                                    .waitSeconds(1)
+                                    .lineToLinearHeading(new Pose2d(spikeCenterX, backdropPosY, Math.toRadians(0.00)))
+                                    .lineToLinearHeading(backdropPose)
+                                    .build()
+                    );
+        }
 
         meepMeep.setBackground(MeepMeep.Background.FIELD_CENTERSTAGE_JUICE_DARK)
                 .setDarkMode(true)
