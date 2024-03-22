@@ -6,6 +6,8 @@ import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
 import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
+import java.io.Console;
+
 public class MeepMeepTesting {
     enum Alliance {
         RED,
@@ -35,16 +37,19 @@ public class MeepMeepTesting {
     static final double ROBOT_SIZE = 18;
 
     // Go to prop
-    static final double SPIKE_Y = 32; // The spike's Y position
+    static final double SPIKE_Y = 32; // Y distance to spike
     static final double SPIKE_SIDE_X = 3; // How much to move to spike's side
     static final double PIXEL_RELEASE_OFFSET = -0.1; // Offset when to release pixel
 
     // Backdrop
     static final double WAIT_BEFORE_BACKDROP = 1; // Time to wait before going to backdrop
-    static final double ARM_SEQUENCE_OFFSET = 4.5; // Offset when to start preparing arm for placing pixel on backdrop
-    static final int ARM_SEQUENCE_TARGET = 500; // Arm lift target
+    static final double FRONT_ARM_SEQUENCE_OFFSET = 1; // Offset when to start preparing arm for placing pixel on backdrop (front)
+    static final double REAR_ARM_SEQUENCE_OFFSET = 1.5; // Offset when to start preparing arm for placing pixel on backdrop (rear)
+    static final double EXTEND_OFFSET = 1.5; // How much time to wait after starting sequence before extending arm
+    static final int ARM_SEQUENCE_TARGET = 500; // Arm lift target for lowering arm
     static final double WAIT_BEFORE_RELEASE = 2; // How much time to wait before releasing pixel
     static final double WAIT_AFTER_RELEASE = 0.5; // How much time to wait after releasing pixel
+    static final double WAIT_FOR_RAISE = 1; // How much time to wait for the arm to raise
     static final double RESET_ARM_OFFSET = 1; // Offset when to start putting arm down
 
     static double advanceToZero(double pos, double distance) {
@@ -147,14 +152,22 @@ public class MeepMeepTesting {
                     .setStartPose(startingPosition)
                     .followTrajectorySequence(drive ->
                             drive.trajectorySequenceBuilder(startingPosition)
-                                    .lineTo(new Vector2d(spikeCenterX, backdropPosY))
-                                    .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot)
+                                    .lineTo(new Vector2d(spikeCenterX, backdropPosY)) // Go to spike center
+                                    .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot) // Go to specific position on spike
+                                    .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> System.out.println("Released pixel")) // Release pixel
                                     .waitSeconds(WAIT_BEFORE_BACKDROP)
-                                    .lineToLinearHeading(backdropPose)
+                                    .UNSTABLE_addTemporalMarkerOffset(FRONT_ARM_SEQUENCE_OFFSET, () -> System.out.println("Raising arm")) // Prepare arm for backdrop)
+                                    .UNSTABLE_addTemporalMarkerOffset(FRONT_ARM_SEQUENCE_OFFSET + EXTEND_OFFSET, () -> System.out.println("Extending arm")) // Extend arm
+                                    .lineToLinearHeading(backdropPose) // Go to backdrop
+                                    .addTemporalMarker(() -> System.out.println("Lowering arm")) // Lower arm
                                     .waitSeconds(WAIT_BEFORE_RELEASE)
+                                    .addTemporalMarker(() -> System.out.println("Released pixel")) // Release pixel
                                     .waitSeconds(WAIT_AFTER_RELEASE)
-                                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY))
-                                    .lineTo(new Vector2d(parkX, parkIntermediateY))
+                                    .addTemporalMarker(() -> System.out.println("Raising arm")) // Raise arm
+                                    .waitSeconds(WAIT_FOR_RAISE)
+                                    .UNSTABLE_addTemporalMarkerOffset(RESET_ARM_OFFSET, () -> System.out.println("Putting arm down")) // Put down arm
+                                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY)) // Strafe to the side
+                                    .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
                                     .build()
                     );
         }
@@ -165,15 +178,23 @@ public class MeepMeepTesting {
                     .setStartPose(startingPosition)
                     .followTrajectorySequence(drive ->
                             drive.trajectorySequenceBuilder(startingPosition)
-                                    .lineTo(new Vector2d(spikeCenterX, backdropPosY))
-                                    .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot)
+                                    .lineTo(new Vector2d(spikeCenterX, backdropPosY)) // Go to spike center
+                                    .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot) // Go to specific position on spike
+                                    .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> System.out.println("Released pixel")) // Release pixel
                                     .waitSeconds(WAIT_BEFORE_BACKDROP)
-                                    .lineToLinearHeading(new Pose2d(spikeCenterX, backdropPosY, Math.toRadians(0.00)))
-                                    .lineToLinearHeading(backdropPose)
+                                    .lineToLinearHeading(new Pose2d(spikeCenterX, backdropPosY, Math.toRadians(0.00))) // Go to center of spike
+                                    .UNSTABLE_addTemporalMarkerOffset(REAR_ARM_SEQUENCE_OFFSET, () -> System.out.println("Raising arm")) // Prepare arm for backdrop)
+                                    .UNSTABLE_addTemporalMarkerOffset(REAR_ARM_SEQUENCE_OFFSET + EXTEND_OFFSET, () -> System.out.println("Extending arm")) // Extend arm
+                                    .lineToLinearHeading(backdropPose) // Go to backdrop
+                                    .addTemporalMarker(() -> System.out.println("Lowering arm")) // Lower arm
                                     .waitSeconds(WAIT_BEFORE_RELEASE)
+                                    .addTemporalMarker(() -> System.out.println("Released pixel")) // Release pixel
                                     .waitSeconds(WAIT_AFTER_RELEASE)
-                                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY))
-                                    .lineTo(new Vector2d(parkX, parkIntermediateY))
+                                    .addTemporalMarker(() -> System.out.println("Raising arm")) // Raise arm
+                                    .waitSeconds(WAIT_FOR_RAISE)
+                                    .UNSTABLE_addTemporalMarkerOffset(RESET_ARM_OFFSET, () -> System.out.println("Putting arm down")) // Put down arm
+                                    .lineTo(new Vector2d(backdropPosX, parkIntermediateY)) // Strafe to the side
+                                    .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
                                     .build()
                     );
         }
