@@ -28,21 +28,22 @@ public class MeepMeepTesting {
         return Alliance.RED;
     }
     static InitialPosition initialPosition() {
-        return InitialPosition.FRONT;
+        return InitialPosition.REAR;
     }
-    static SpikePosition spikePosition = SpikePosition.LEFT;
+    static SpikePosition spikePosition = SpikePosition.CENTER;
 
     static final double TILE_SIZE = 23.4;
     static final double STAGE_SIZE = 70.3;
     static final double ROBOT_SIZE = 18;
 
     // Go to prop
-    static final double SPIKE_Y = 32; // Y distance to spike
+    static final double SPIKE_Y = 30; // Y distance to spike
     static final double SPIKE_SIDE_X = 3; // How much to move to spike's side
-    static final double PIXEL_RELEASE_OFFSET = -0.1; // Offset when to release pixel
+    static final double PIXEL_RELEASE_OFFSET = -0.25; // Offset when to release pixel
+    static final double BACK_UP = 5; // Distance to go back after placing pixel
 
     // Backdrop
-    static final double WAIT_BEFORE_BACKDROP = 1; // Time to wait before going to backdrop
+    static final double WAIT_BEFORE_BACKDROP = 0.5; // Time to wait before going to backdrop
     static final double EXTEND_OFFSET = 1.5; // How much time to wait after starting sequence before extending arm
     static final int ARM_SEQUENCE_TARGET = 500; // Arm lift target for lowering arm
     static final double WAIT_BEFORE_RELEASE = 2; // How much time to wait before releasing pixel
@@ -154,6 +155,7 @@ public class MeepMeepTesting {
                                     .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot) // Go to specific position on spike
                                     .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> System.out.println("Released pixel")) // Release pixel
                                     .waitSeconds(WAIT_BEFORE_BACKDROP)
+                                    .back(BACK_UP) // Move back
                                     .lineToLinearHeading(new Pose2d(startingPosition.getX(), startingPosition.getY(), Math.toRadians(0.00))) // Return to starting position
                                     .addTemporalMarker(() -> System.out.println("Raising arm")) // Prepare arm for backdrop
                                     .UNSTABLE_addTemporalMarkerOffset(EXTEND_OFFSET, () -> System.out.println("Extending arm")) // Extend arm
@@ -181,6 +183,7 @@ public class MeepMeepTesting {
                                     .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot) // Go to specific position on spike
                                     .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> System.out.println("Released pixel")) // Release pixel
                                     .waitSeconds(WAIT_BEFORE_BACKDROP)
+                                    .back(BACK_UP) // Move back
                                     .lineToLinearHeading(new Pose2d(startingPosition.getX(), startingPosition.getY(), Math.toRadians(0.00))) // Return to starting position
                                     .lineToLinearHeading(new Pose2d(0, startingPosition.getY(), Math.toRadians(0.00))) // Go to x=0
                                     .addTemporalMarker(() -> System.out.println("Raising arm")) // Prepare arm for backdrop

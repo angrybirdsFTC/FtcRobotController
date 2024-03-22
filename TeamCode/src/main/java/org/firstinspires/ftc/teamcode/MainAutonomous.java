@@ -18,12 +18,13 @@ public abstract class MainAutonomous extends LinearOpMode {
     final double ROBOT_SIZE = 18;
 
     // Go to prop
-    final double SPIKE_Y = 32; // Y distance to spike
+    final double SPIKE_Y = 30; // Y distance to spike
     final double SPIKE_SIDE_X = 3; // How much to move to spike's side
-    final double PIXEL_RELEASE_OFFSET = -0.1; // Offset when to release pixel
+    final double PIXEL_RELEASE_OFFSET = -0.25; // Offset when to release pixel
+    final double BACK_UP = 5; // Distance to go back after placing pixel
 
     // Backdrop
-    final double WAIT_BEFORE_BACKDROP = 1; // Time to wait before going to backdrop
+    final double WAIT_BEFORE_BACKDROP = 0.5; // Time to wait before going to backdrop
     final double EXTEND_OFFSET = 1.5; // How much time to wait after starting sequence before extending arm
     final int ARM_SEQUENCE_TARGET = 500; // Arm lift target for lowering arm
     final double WAIT_BEFORE_RELEASE = 2; // How much time to wait before releasing pixel
@@ -126,6 +127,7 @@ public abstract class MainAutonomous extends LinearOpMode {
                     .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot) // Go to specific position on spike
                     .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN)) // Release pixel
                     .waitSeconds(WAIT_BEFORE_BACKDROP)
+                    .back(BACK_UP) // Move back
                     .lineToLinearHeading(new Pose2d(startingPosition.getX(), startingPosition.getY(), Math.toRadians(0.00))) // Return to starting position
                     .addTemporalMarker(() -> {
                         armTarget = ArmUtils.BACKDROP_ARM_TARGET;
@@ -183,6 +185,7 @@ public abstract class MainAutonomous extends LinearOpMode {
                     .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot) // Go to specific position on spike
                     .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN)) // Release pixel
                     .waitSeconds(WAIT_BEFORE_BACKDROP)
+                    .back(BACK_UP) // Move back
                     .lineToLinearHeading(new Pose2d(startingPosition.getX(), startingPosition.getY(), Math.toRadians(0.00))) // Return to starting position
                     .lineToLinearHeading(new Pose2d(0, startingPosition.getY(), Math.toRadians(0.00))) // Go to x=0
                     .addTemporalMarker(() -> {
