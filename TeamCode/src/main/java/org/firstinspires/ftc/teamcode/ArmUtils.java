@@ -222,7 +222,7 @@ public class ArmUtils {
     public void extend(Gamepad gamepad) {
         if (sequenceActive && gamepad.right_stick_y != 0) stopSequences();
 
-        if (-armExtend.getCurrentPosition() < ARM_EXTEND_LIMIT) {
+        if (-armExtend.getCurrentPosition() < ARM_EXTEND_LIMIT || -gamepad.right_stick_y < 0) {
             armExtend.setPower(-gamepad.right_stick_y * ARM_EXTEND_SPEED);
         }
         else armExtend.setPower(0);
