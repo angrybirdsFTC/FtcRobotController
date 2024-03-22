@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.Roadrunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.Roadrunner.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.Roadrunner.trajectorysequence.sequencesegment.SequenceSegment;
 import org.firstinspires.ftc.teamcode.Roadrunner.trajectorysequence.sequencesegment.TrajectorySegment;
+import org.firstinspires.ftc.teamcode.Roadrunner.util.PoseStorage;
 
 public abstract class MainAutonomous extends LinearOpMode {
     final double TILE_SIZE = 23.4;
@@ -242,6 +243,8 @@ public abstract class MainAutonomous extends LinearOpMode {
         // Run trajectory sequence
         drive.setPoseEstimate(trajectorySequence.start());
         drive.followTrajectorySequenceAsync(trajectorySequence);
+
+        PoseStorage.currentPose = trajectorySequence.end();
     }
 
     void runSequence() {
