@@ -25,12 +25,12 @@ public class MeepMeepTesting {
     }
 
     static Alliance alliance() {
-        return Alliance.BLUE;
+        return Alliance.RED;
     }
     static InitialPosition initialPosition() {
         return InitialPosition.FRONT;
     }
-    static SpikePosition spikePosition = SpikePosition.RIGHT;
+    static SpikePosition spikePosition = SpikePosition.LEFT;
 
     static final double TILE_SIZE = 23.4;
     static final double STAGE_SIZE = 70.3;
@@ -43,8 +43,6 @@ public class MeepMeepTesting {
 
     // Backdrop
     static final double WAIT_BEFORE_BACKDROP = 1; // Time to wait before going to backdrop
-    static final double FRONT_ARM_SEQUENCE_OFFSET = 1; // Offset when to start preparing arm for placing pixel on backdrop (front)
-    static final double REAR_ARM_SEQUENCE_OFFSET = 1.5; // Offset when to start preparing arm for placing pixel on backdrop (rear)
     static final double EXTEND_OFFSET = 1.5; // How much time to wait after starting sequence before extending arm
     static final int ARM_SEQUENCE_TARGET = 500; // Arm lift target for lowering arm
     static final double WAIT_BEFORE_RELEASE = 2; // How much time to wait before releasing pixel
@@ -156,8 +154,9 @@ public class MeepMeepTesting {
                                     .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot) // Go to specific position on spike
                                     .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> System.out.println("Released pixel")) // Release pixel
                                     .waitSeconds(WAIT_BEFORE_BACKDROP)
-                                    .UNSTABLE_addTemporalMarkerOffset(FRONT_ARM_SEQUENCE_OFFSET, () -> System.out.println("Raising arm")) // Prepare arm for backdrop)
-                                    .UNSTABLE_addTemporalMarkerOffset(FRONT_ARM_SEQUENCE_OFFSET + EXTEND_OFFSET, () -> System.out.println("Extending arm")) // Extend arm
+                                    .lineToLinearHeading(new Pose2d(startingPosition.getX(), startingPosition.getY(), Math.toRadians(0.00))) // Return to starting position
+                                    .addTemporalMarker(() -> System.out.println("Raising arm")) // Prepare arm for backdrop
+                                    .UNSTABLE_addTemporalMarkerOffset(EXTEND_OFFSET, () -> System.out.println("Extending arm")) // Extend arm
                                     .lineToLinearHeading(backdropPose) // Go to backdrop
                                     .addTemporalMarker(() -> System.out.println("Lowering arm")) // Lower arm
                                     .waitSeconds(WAIT_BEFORE_RELEASE)
@@ -182,9 +181,10 @@ public class MeepMeepTesting {
                                     .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot) // Go to specific position on spike
                                     .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> System.out.println("Released pixel")) // Release pixel
                                     .waitSeconds(WAIT_BEFORE_BACKDROP)
-                                    .lineToLinearHeading(new Pose2d(spikeCenterX, backdropPosY, Math.toRadians(0.00))) // Go to center of spike
-                                    .UNSTABLE_addTemporalMarkerOffset(REAR_ARM_SEQUENCE_OFFSET, () -> System.out.println("Raising arm")) // Prepare arm for backdrop)
-                                    .UNSTABLE_addTemporalMarkerOffset(REAR_ARM_SEQUENCE_OFFSET + EXTEND_OFFSET, () -> System.out.println("Extending arm")) // Extend arm
+                                    .lineToLinearHeading(new Pose2d(startingPosition.getX(), startingPosition.getY(), Math.toRadians(0.00))) // Return to starting position
+                                    .lineToLinearHeading(new Pose2d(0, startingPosition.getY(), Math.toRadians(0.00))) // Go to x=0
+                                    .addTemporalMarker(() -> System.out.println("Raising arm")) // Prepare arm for backdrop
+                                    .UNSTABLE_addTemporalMarkerOffset(EXTEND_OFFSET, () -> System.out.println("Extending arm")) // Extend arm
                                     .lineToLinearHeading(backdropPose) // Go to backdrop
                                     .addTemporalMarker(() -> System.out.println("Lowering arm")) // Lower arm
                                     .waitSeconds(WAIT_BEFORE_RELEASE)
