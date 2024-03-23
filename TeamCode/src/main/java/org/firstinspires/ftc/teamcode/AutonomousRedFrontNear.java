@@ -2,8 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name = "Autonomous - Red Front", group = "SA_FTC")
-public class AutonomousRedFront extends MainAutonomous {
+@Autonomous(name = "Autonomous - Red Front Near", group = "SA_FTC")
+public class AutonomousRedFrontNear extends MainAutonomous {
     @Override
     protected Alliance alliance() {
         return Alliance.RED;
@@ -13,4 +13,7 @@ public class AutonomousRedFront extends MainAutonomous {
     protected InitialPosition initialPosition() {
         return InitialPosition.FRONT;
     }
+
+    @Override
+    protected Parking parking() { return Parking.NEAR; }
 }
