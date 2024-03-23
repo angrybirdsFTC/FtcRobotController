@@ -132,6 +132,9 @@ public class ArmUtils {
                 sequenceDirection = ExtendDirection.BACKWARD;
                 armExtend.setPower(-ARM_EXTEND_SPEED);
             }
+            else {
+                sequenceGotToPosition = true;
+            }
 
             sequenceGotToPosition = (sequenceDirection == ExtendDirection.FORWARD && -armExtend.getCurrentPosition() >= extendTarget) || (sequenceDirection == ExtendDirection.BACKWARD && -armExtend.getCurrentPosition() <= extendTarget);
         }
