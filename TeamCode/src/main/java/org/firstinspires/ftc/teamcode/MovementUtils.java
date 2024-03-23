@@ -9,9 +9,9 @@ import org.firstinspires.ftc.teamcode.Roadrunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.Roadrunner.util.PoseStorage;
 
 public class MovementUtils {
-    final double AXIAL_SPEED = 0.7;
-    final double LATERAL_SPEED = 0.8;
-    final double YAW_SPEED = 0.7;
+    final double AXIAL_SPEED = 0.8;
+    final double LATERAL_SPEED = 0.9;
+    final double YAW_SPEED = 0.8;
     final double SLOW_MODE_MULTIPLIER = 0.4;
 
     DcMotor frontLeftMotor;
