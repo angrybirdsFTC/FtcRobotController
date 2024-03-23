@@ -64,6 +64,7 @@ public class ArmUtils {
 
     ExtendDirection sequenceDirection = ExtendDirection.UNINITIALIZED;
     boolean sequenceGotToPosition = false;
+    boolean sequenceFirstTime = true;
 
     public ArmUtils(HardwareMap hardwareMap) {
         armLift = hardwareMap.dcMotor.get("armLift");
@@ -116,12 +117,16 @@ public class ArmUtils {
     }
 
     boolean baseSequence(int armTarget, int extendTarget, double rollerTarget, double leftGripTarget, double rightGripTarget) {
-        armLift.setPower(SEQUENCE_ARM_POWER);
-        currentArmLiftPos = armTarget;
-        armLift.setTargetPosition(currentArmLiftPos);
-        leftGrip.setPosition(leftGripTarget);
-        rightGrip.setPosition(rightGripTarget);
-        rollerServo.setPosition(rollerTarget);
+        if (sequenceFirstTime) {
+            sequenceFirstTime = false;
+
+            armLift.setPower(SEQUENCE_ARM_POWER);
+            currentArmLiftPos = armTarget;
+            armLift.setTargetPosition(currentArmLiftPos);
+            leftGrip.setPosition(leftGripTarget);
+            rightGrip.setPosition(rightGripTarget);
+            rollerServo.setPosition(rollerTarget);
+        }
 
         if (!sequenceGotToPosition) {
             if (-armExtend.getCurrentPosition() < extendTarget && sequenceDirection != ExtendDirection.BACKWARD) {
