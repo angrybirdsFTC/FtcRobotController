@@ -25,7 +25,9 @@ public abstract class MainAutonomous extends LinearOpMode {
     final double BACK_UP = 5; // Distance to go back after placing pixel
 
     // Backdrop
-    final double BACKDROP_POS_Y = TILE_SIZE * 1.25; // Time to wait before going to backdrop
+    final double BACKDROP_LEFT_POS_Y = TILE_SIZE * 1.25; // Where to drop pixel
+    final double BACKDROP_CENTER_POS_Y = TILE_SIZE * 1.5; // Where to drop pixel
+    final double BACKDROP_RIGHT_POS_Y = TILE_SIZE * 1.75; // Where to drop pixel
     final double WAIT_BEFORE_BACKDROP = 0.5; // Time to wait before going to backdrop
     final double EXTEND_OFFSET = 1; // How much time to wait after starting sequence before extending arm
     final int ARM_SEQUENCE_TARGET = 300; // Arm lift target for lowering arm
@@ -72,7 +74,7 @@ public abstract class MainAutonomous extends LinearOpMode {
 
     void runAutonomous(Pose2d startingPosition) {
         // Detect prop
-        DetectProp.SpikePosition spikePosition;
+        DetectProp.SpikePosition spikePosition = DetectProp.SpikePosition.NONE;
         do {
             spikePosition = detectProp.getSpikePosition();
         } while (spikePosition == DetectProp.SpikePosition.NONE);
@@ -111,14 +113,26 @@ public abstract class MainAutonomous extends LinearOpMode {
         }
 
         // Go to backdrop
-        double backdropPosX = STAGE_SIZE - TILE_SIZE;
-        double backdropPosY = advanceToZero(alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE, BACKDROP_POS_Y);
+        double backdropPosX = STAGE_SIZE - TILE_SIZE * 0.75;
+        double backdropPosY = 0;
+        if (spikePosition == DetectProp.SpikePosition.LEFT) {
+            backdropPosY = advanceToZero(alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE, BACKDROP_LEFT_POS_Y);
+        }
+        else if (spikePosition == DetectProp.SpikePosition.CENTER) {
+            backdropPosY = advanceToZero(alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE, BACKDROP_CENTER_POS_Y);
+        }
+        else {
+            backdropPosY = advanceToZero(alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE, BACKDROP_RIGHT_POS_Y);
+        }
+
         Pose2d backdropPose = new Pose2d(backdropPosX, backdropPosY, Math.toRadians(0.00));
 
         double spikeCenterX = startingPosition.getX();
 
+        double rearIntermediateY = advanceToZero(alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE, TILE_SIZE * 2.5);
+
         // Park
-        double parkIntermediateY = advanceToZero(alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE, TILE_SIZE * 2.5);;
+        double parkIntermediateY = advanceToZero(alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE, TILE_SIZE * 3);
         double parkX = STAGE_SIZE - TILE_SIZE / 2;
 
         // Build trajectory sequence
@@ -181,15 +195,15 @@ public abstract class MainAutonomous extends LinearOpMode {
                     .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
                     .build();
         }
-        else {
+        else { // Rear
             trajectorySequence = drive.trajectorySequenceBuilder(startingPosition)
                     .lineTo(new Vector2d(spikeCenterX, backdropPosY)) // Go to spike center
                     .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot) // Go to specific position on spike
                     .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN)) // Release pixel
                     .back(BACK_UP) // Move back
                     .waitSeconds(WAIT_BEFORE_BACKDROP)
-                    .lineToLinearHeading(new Pose2d(startingPosition.getX(), startingPosition.getY(), Math.toRadians(0.00))) // Return to starting position
-                    .lineToLinearHeading(new Pose2d(0, startingPosition.getY(), Math.toRadians(0.00))) // Go to x=0
+                    .lineToLinearHeading(new Pose2d(spikeCenterX, rearIntermediateY, Math.toRadians(0.00))) // Go forward
+                    .lineTo(new Vector2d(0, rearIntermediateY)) // Go to center
                     .addTemporalMarker(() -> {
                         armTarget = ArmUtils.BACKDROP_ARM_TARGET;
                         extendTarget = 0;
