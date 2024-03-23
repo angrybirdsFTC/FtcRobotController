@@ -169,6 +169,7 @@ public class ArmUtils {
                 if (backdropMode < BACKDROP_EXTEND_TARGET.length - 1) backdropMode++;
 
                 gamepad.rumble(150);
+                sequenceFirstTime = true;
                 stopSequences();
                 pixelBackdropSequence();
             }
@@ -176,6 +177,7 @@ public class ArmUtils {
                 if (backdropMode > 0) backdropMode--;
 
                 gamepad.rumble(150);
+                sequenceFirstTime = true;
                 stopSequences();
                 pixelBackdropSequence();
             }
@@ -186,10 +188,12 @@ public class ArmUtils {
         // Start Sequences
         if (!sequenceActive) {
             if (gamepad.a) {
+                sequenceFirstTime = true;
                 stopSequences();
                 pixelPickupSequence();
             }
             else if (gamepad.y) {
+                sequenceFirstTime = true;
                 stopSequences();
                 pixelBackdropSequence();
             }
