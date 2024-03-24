@@ -20,6 +20,7 @@ public abstract class MainAutonomous extends LinearOpMode {
 
     // Go to prop
     final double SPIKE_Y = 28; // Y distance to spike
+    final double SPIKE_CENTER_Y = 30; // Y distance to spike center
     final double SPIKE_SIDE_X = 4; // How much to move to spike's side
     final double PIXEL_RELEASE_OFFSET = -1; // Offset when to release pixel
     final double BACK_UP = 5; // Distance to go back after placing pixel
@@ -36,8 +37,8 @@ public abstract class MainAutonomous extends LinearOpMode {
     final int ARM_SEQUENCE_TARGET = 200; // Arm lift target for lowering arm
     final double WAIT_BEFORE_RELEASE = 2; // How much time to wait before releasing pixel
     final double WAIT_AFTER_RELEASE = 0.5; // How much time to wait after releasing pixel
-    final double WAIT_FOR_RAISE = 0.2; // How much time to wait for the arm to raise
-    final double RESET_ARM_OFFSET = 0.3; // Offset when to start putting arm down
+    final double WAIT_FOR_RAISE = 0.5; // How much time to wait for the arm to raise
+    final double RESET_ARM_OFFSET = 0.5; // Offset when to start putting arm down
 
     // Parking
     final double NEAR_PARKING = TILE_SIZE * 0.25;
@@ -101,7 +102,7 @@ public abstract class MainAutonomous extends LinearOpMode {
         double spikeRot = startPose.getHeading();
 
         if (spikePosition == DetectProp.SpikePosition.CENTER) {
-            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
+            spikePosY = advanceToZero(spikePosY, SPIKE_CENTER_Y);
         }
         else if (spikePosition == DetectProp.SpikePosition.LEFT) {
             spikePosY = advanceToZero(spikePosY, SPIKE_Y);
@@ -139,7 +140,7 @@ public abstract class MainAutonomous extends LinearOpMode {
 
         Vector2d backdropPose = new Vector2d(BACKDROP_POS_X, backdropPosY);
 
-        double spikeCenterX = startPose.getX();
+        double spikeCenterX = initialPosition() == InitialPosition.FRONT ? startPose.getX() : startPose.getX() - 5;
         double spikeCenterY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);
 
         double rearIntermediateY = advanceToZero(getStageEdge(), TILE_SIZE * 2.5);
