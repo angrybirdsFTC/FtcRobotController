@@ -30,7 +30,7 @@ public abstract class MainAutonomous extends OpMode {
     final double FRONT_DOWN = TILE_SIZE; // Y position to move to after placing pixel on spike in front
     final double BACKDROP_POS_X = STAGE_SIZE - TILE_SIZE * 0.5 - ROBOT_SIZE / 1.8;
     final double BACKDROP_CENTER_POS_Y = TILE_SIZE * 1.3; // The backdrop's Y position from the edge of the stage
-    final double BACKDROP_SIDE_OFFSET = TILE_SIZE * 0.25; // How much to move from the center of the backdrop to the left or right of the backdrop
+    final double BACKDROP_SIDE_OFFSET = TILE_SIZE * 0.15; // How much to move from the center of the backdrop to the left or right of the backdrop
     final double WAIT_BEFORE_BACKDROP = 0.5; // Time to wait before going to backdrop
     final double EXTEND_OFFSET = 1.5; // How much time to wait after starting sequence before extending arm
     final int BACKDROP_ARM_TARGET = 1700; // Arm lift target for raising arm
