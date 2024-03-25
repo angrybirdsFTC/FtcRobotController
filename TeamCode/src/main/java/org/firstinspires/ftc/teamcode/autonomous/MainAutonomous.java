@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.autonomous;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -13,36 +14,37 @@ import org.firstinspires.ftc.teamcode.roadrunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.roadrunner.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.roadrunner.util.PoseStorage;
 
-public abstract class MainAutonomous extends LinearOpMode {
+public abstract class MainAutonomous extends OpMode {
     final double TILE_SIZE = 23.4;
     final double STAGE_SIZE = 70.3;
     final double ROBOT_SIZE = 17;
 
     // Go to prop
     final double SPIKE_Y = 28; // Y distance to spike
-    final double SPIKE_CENTER_Y = 30; // Y distance to spike center
-    final double SPIKE_SIDE_X = 4; // How much to move to spike's side
-    final double PIXEL_RELEASE_OFFSET = -1; // Offset when to release pixel
-    final double BACK_UP = 5; // Distance to go back after placing pixel
+    final double SPIKE_CENTER_Y = 29; // Y distance to spike center
+    final double SPIKE_SIDE_X = 0.1; // How much to move to spike's side
+    final double PIXEL_RELEASE_OFFSET = -0.5; // Offset when to release pixel
+    final double BACK_UP = 2; // Distance to go back after placing pixel
 
     // Backdrop
     final double FRONT_DOWN = TILE_SIZE; // Y position to move to after placing pixel on spike in front
-    final double BACKDROP_POS_X = STAGE_SIZE - TILE_SIZE * 0.5 - ROBOT_SIZE / 4;
-    final double BACKDROP_CENTER_POS_Y = TILE_SIZE * 1.5; // The backdrop's Y position from the edge of the stage
-    final double BACKDROP_SIDE_OFFSET = TILE_SIZE * 0.33; // How much to move from the center of the backdrop to the left or right of the backdrop
+    final double BACKDROP_POS_X = STAGE_SIZE - TILE_SIZE * 0.5 - ROBOT_SIZE / 1.8;
+    final double BACKDROP_CENTER_POS_Y = TILE_SIZE * 1.3; // The backdrop's Y position from the edge of the stage
+    final double BACKDROP_SIDE_OFFSET = TILE_SIZE * 0.25; // How much to move from the center of the backdrop to the left or right of the backdrop
     final double WAIT_BEFORE_BACKDROP = 0.5; // Time to wait before going to backdrop
     final double EXTEND_OFFSET = 1.5; // How much time to wait after starting sequence before extending arm
-    final int BACKDROP_ARM_TARGET = 1700;
-    final int BACKDROP_EXTEND_TARGET = 1600;
+    final int BACKDROP_ARM_TARGET = 1700; // Arm lift target for raising arm
+    final int BACKDROP_EXTEND_TARGET = 1200; // Arm extend target for raising arm
     final int ARM_SEQUENCE_TARGET = 200; // Arm lift target for lowering arm
     final double WAIT_BEFORE_RELEASE = 2; // How much time to wait before releasing pixel
     final double WAIT_AFTER_RELEASE = 0.5; // How much time to wait after releasing pixel
-    final double WAIT_FOR_RAISE = 0.5; // How much time to wait for the arm to raise
+    final double WAIT_FOR_RAISE = 1; // How much time to wait for the arm to raise
     final double RESET_ARM_OFFSET = 0.5; // Offset when to start putting arm down
 
     // Parking
-    final double NEAR_PARKING = TILE_SIZE * 0.25;
-    final double FAR_PARKING = TILE_SIZE * 2.5;
+    final double PARKING_INTERMEDIATE_X = BACKDROP_POS_X - 10;
+    final double NEAR_PARKING = TILE_SIZE * 0.12;
+    final double FAR_PARKING = TILE_SIZE * 2.6;
 
     protected enum Alliance {
         RED,
@@ -71,6 +73,8 @@ public abstract class MainAutonomous extends LinearOpMode {
 
     SampleMecanumDrive drive;
     DetectProp detectProp;
+    DetectProp.SpikePosition spikePosition;
+    Pose2d startPose;
 
     int armTarget;
     int extendTarget;
@@ -80,6 +84,7 @@ public abstract class MainAutonomous extends LinearOpMode {
 
     ArmUtils.ExtendDirection sequenceDirection = ArmUtils.ExtendDirection.UNINITIALIZED;
     boolean sequenceGotToPosition = false;
+    int prevExtendTarget = 0;
 
     double advanceToZero(double pos, double distance) {
         return pos - Math.signum(pos) * distance;
@@ -89,13 +94,7 @@ public abstract class MainAutonomous extends LinearOpMode {
         return alliance() == Alliance.BLUE ? STAGE_SIZE : -STAGE_SIZE;
     }
 
-    void runAutonomous(Pose2d startPose) {
-        // Detect prop
-        DetectProp.SpikePosition spikePosition;
-        do {
-            spikePosition = detectProp.getSpikePosition();
-        } while (spikePosition == DetectProp.SpikePosition.NONE);
-
+    void runAutonomous() {
         // Go to prop
         double spikePosX = startPose.getX();
         double spikePosY = startPose.getY();
@@ -140,10 +139,10 @@ public abstract class MainAutonomous extends LinearOpMode {
 
         Vector2d backdropPose = new Vector2d(BACKDROP_POS_X, backdropPosY);
 
-        double spikeCenterX = initialPosition() == InitialPosition.FRONT ? startPose.getX() : startPose.getX() - 5;
+        double spikeCenterX = startPose.getX();
         double spikeCenterY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);
 
-        double rearIntermediateY = advanceToZero(getStageEdge(), TILE_SIZE * 2.5);
+        double rearIntermediateY = advanceToZero(getStageEdge(), TILE_SIZE * 2.75);
 
         // Park
         double parkIntermediateY = advanceToZero(getStageEdge(), parking() == Parking.NEAR ? NEAR_PARKING : FAR_PARKING);
@@ -155,11 +154,28 @@ public abstract class MainAutonomous extends LinearOpMode {
         // Build trajectory sequence
         TrajectorySequence trajectorySequence = drive.trajectorySequenceBuilder(startPose)
                 .lineTo(new Vector2d(spikeCenterX, spikeCenterY)) // Go to spike center
-                .splineTo(new Vector2d(spikePosX, spikePosY), spikeRot) // Go to specific position on spike
-                .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> rightGrip.setPosition(ArmUtils.GRIP_OPEN)) // Release pixel
+                .lineTo(new Vector2d(spikePosX, spikePosY)) // Go to specific position on spike
+                .lineToLinearHeading(new Pose2d(spikePosX + 0.01, spikePosY + 0.01, spikeRot)) // Rotate to spike
+                .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> {
+                    resetSequence();
+                    armTarget = 0;
+                    extendTarget = 0;
+                    rollerTarget = ArmUtils.ROLLER_UPSIDEDOWN;
+                    leftGripTarget = ArmUtils.GRIP_CLOSED;
+                    rightGripTarget = 0.8;
+                }) // Release pixel
                 .back(BACK_UP) // Move back
+                .addTemporalMarker(() -> {
+                    resetSequence();
+                    armTarget = 100;
+                    extendTarget = 0;
+                    rollerTarget = ArmUtils.ROLLER_UPSIDEDOWN;
+                    leftGripTarget = ArmUtils.GRIP_CLOSED;
+                    rightGripTarget = ArmUtils.GRIP_OPEN;
+                }) // Raise arm
                 .waitSeconds(WAIT_BEFORE_BACKDROP)
-                .lineToLinearHeading(new Pose2d(spikeCenterX, beforeBackdropY, Math.toRadians(0.00))) // Go down (front) Go up (rear)
+                .lineTo(new Vector2d(spikeCenterX, beforeBackdropY)) // Go up (front) Go forward (rear)
+                .lineToLinearHeading(new Pose2d(spikeCenterX + 0.1, beforeBackdropY + 0.1, Math.toRadians(0.00))) // Rotate to 0
                 .lineTo(new Vector2d(beforeBackdropX, beforeBackdropY)) // Go to center (rear)
                 .addTemporalMarker(() -> {
                     resetSequence();
@@ -198,6 +214,7 @@ public abstract class MainAutonomous extends LinearOpMode {
                 .waitSeconds(WAIT_AFTER_RELEASE)
                 .addTemporalMarker(() -> {
                     resetSequence();
+                    armLift.setPower(0.1);
                     armTarget = BACKDROP_ARM_TARGET;
                     extendTarget = BACKDROP_EXTEND_TARGET;
                     rollerTarget = ArmUtils.ROLLER_FLAT;
@@ -208,13 +225,15 @@ public abstract class MainAutonomous extends LinearOpMode {
                 .UNSTABLE_addTemporalMarkerOffset(RESET_ARM_OFFSET, () -> {
                     resetSequence();
                     armTarget = -200;
-                    extendTarget = 0;
+                    extendTarget = ArmUtils.ARM_EXTEND_MIN_LIMIT;
                     rollerTarget = ArmUtils.ROLLER_FLAT;
                     leftGripTarget = ArmUtils.GRIP_CLOSED;
                     rightGripTarget = ArmUtils.GRIP_CLOSED;
                 }) // Put down arm
-                .lineTo(new Vector2d(BACKDROP_POS_X, parkIntermediateY)) // Strafe to the side
-                .lineToLinearHeading(new Pose2d(parkX, parkIntermediateY, Math.toRadians(180.00))) // Park
+                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, backdropPose.getY())) // Go back
+                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, parkIntermediateY)) // Strafe to the side
+                .lineToLinearHeading(new Pose2d(PARKING_INTERMEDIATE_X + 0.1, parkIntermediateY + 0.1, Math.toRadians(180.00))) // Rotate to 180
+                .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
                 .build();
 
         // Run trajectory sequence
@@ -232,26 +251,32 @@ public abstract class MainAutonomous extends LinearOpMode {
         leftGrip.setPosition(leftGripTarget);
         rightGrip.setPosition(rightGripTarget);
 
-        if (!sequenceGotToPosition && armLift.getCurrentPosition() > 100) {
-            if (-armExtend.getCurrentPosition() < extendTarget && sequenceDirection != ArmUtils.ExtendDirection.BACKWARD) {
-                sequenceDirection = ArmUtils.ExtendDirection.FORWARD;
-                armExtend.setPower(ArmUtils.ARM_EXTEND_SPEED);
-            }
-            else if (-armExtend.getCurrentPosition() > extendTarget && sequenceDirection != ArmUtils.ExtendDirection.FORWARD) {
-                sequenceDirection = ArmUtils.ExtendDirection.BACKWARD;
-                armExtend.setPower(-ArmUtils.ARM_EXTEND_SPEED);
+        if (prevExtendTarget != extendTarget) {
+            if (!sequenceGotToPosition && armLift.getCurrentPosition() > 100) {
+                if (-armExtend.getCurrentPosition() < extendTarget && sequenceDirection != ArmUtils.ExtendDirection.BACKWARD) {
+                    sequenceDirection = ArmUtils.ExtendDirection.FORWARD;
+                    armExtend.setPower(ArmUtils.ARM_EXTEND_SPEED);
+                }
+                else if (-armExtend.getCurrentPosition() > extendTarget && sequenceDirection != ArmUtils.ExtendDirection.FORWARD) {
+                    sequenceDirection = ArmUtils.ExtendDirection.BACKWARD;
+                    armExtend.setPower(-ArmUtils.ARM_EXTEND_SPEED);
+                }
+                else {
+                    sequenceGotToPosition = true;
+                }
+
+                sequenceGotToPosition = (sequenceDirection == ArmUtils.ExtendDirection.FORWARD && -armExtend.getCurrentPosition() >= extendTarget) || (sequenceDirection == ArmUtils.ExtendDirection.BACKWARD && -armExtend.getCurrentPosition() <= extendTarget);
             }
             else {
-                sequenceGotToPosition = true;
+                armExtend.setPower(0);
             }
-
-            sequenceGotToPosition = (sequenceDirection == ArmUtils.ExtendDirection.FORWARD && -armExtend.getCurrentPosition() >= extendTarget) || (sequenceDirection == ArmUtils.ExtendDirection.BACKWARD && -armExtend.getCurrentPosition() <= extendTarget);
         }
         else {
-            armExtend.setPower(0);
+            sequenceGotToPosition = true;
         }
 
-        if (!armLift.isBusy() && sequenceGotToPosition) {
+        if (sequenceGotToPosition) {
+            prevExtendTarget = extendTarget;
             resetSequence();
         }
     }
@@ -267,10 +292,11 @@ public abstract class MainAutonomous extends LinearOpMode {
         rightGripTarget = 0;
 
         armExtend.setPower(0);
+        armLift.setPower(ArmUtils.ARM_LIFT_POWER);
     }
 
     @Override
-    public void runOpMode() {
+    public void init() {
         // Initialize
         drive = new SampleMecanumDrive(hardwareMap);
         detectProp = new DetectProp(hardwareMap);
@@ -301,7 +327,7 @@ public abstract class MainAutonomous extends LinearOpMode {
             startingX = TILE_SIZE / 2;
         }
         else if (initialPosition() == InitialPosition.REAR) {
-            startingX = -(TILE_SIZE * 1.5);
+            startingX = -(TILE_SIZE * 1.53);
         }
 
         if (alliance() == Alliance.BLUE) {
@@ -313,26 +339,30 @@ public abstract class MainAutonomous extends LinearOpMode {
             startingRotation = Math.toRadians(90);
         }
 
-        Pose2d startPose = new Pose2d(startingX, startingY, startingRotation);
+        startPose = new Pose2d(startingX, startingY, startingRotation);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+    }
 
-        // Wait for the game to start (driver presses PLAY)
-        waitForStart();
+    @Override
+    public void init_loop() {
+        spikePosition = detectProp.getSpikePosition();
+    }
+
+    @Override
+    public void start() {
         runtime.reset();
 
-        if (isStopRequested()) return;
+        runAutonomous();
 
         telemetry.addData("Status", "Running");
         telemetry.update();
+    }
 
-        runAutonomous(startPose);
-
-        // Run until the end of the match (driver presses STOP)
-        while (opModeIsActive()) {
-            drive.update();
-            runSequence();
-        }
+    @Override
+    public void loop() {
+        drive.update();
+        runSequence();
     }
 }

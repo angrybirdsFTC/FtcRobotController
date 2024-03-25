@@ -20,7 +20,8 @@ public class ArmUtils {
     public static final double ARM_LIFT_POWER = 0.6;
     public static final int ARM_MAX_POSITION = 3200;
     public static final int ARM_MIN_POSITION = -200;
-    public static final int ARM_EXTEND_LIMIT = 3600;
+    public static final int ARM_EXTEND_MAX_LIMIT = 3600;
+    public static final int ARM_EXTEND_MIN_LIMIT = 500;
 
     // Grip
     public static final double GRIP_OPEN = 0.5;
@@ -150,6 +151,7 @@ public class ArmUtils {
         if (!armLift.isBusy() && sequenceGotToPosition) {
             sequenceDirection = ExtendDirection.UNINITIALIZED;
             sequenceGotToPosition = false;
+            sequenceFirstTime = true;
 
             armExtend.setPower(0);
             armLift.setPower(ARM_LIFT_POWER);
@@ -169,7 +171,6 @@ public class ArmUtils {
                 if (backdropMode < BACKDROP_EXTEND_TARGET.length - 1) backdropMode++;
 
                 gamepad.rumble(150);
-                sequenceFirstTime = true;
                 stopSequences();
                 pixelBackdropSequence();
             }
@@ -177,7 +178,6 @@ public class ArmUtils {
                 if (backdropMode > 0) backdropMode--;
 
                 gamepad.rumble(150);
-                sequenceFirstTime = true;
                 stopSequences();
                 pixelBackdropSequence();
             }
@@ -188,12 +188,10 @@ public class ArmUtils {
         // Start Sequences
         if (!sequenceActive) {
             if (gamepad.a) {
-                sequenceFirstTime = true;
                 stopSequences();
                 pixelPickupSequence();
             }
             else if (gamepad.y) {
-                sequenceFirstTime = true;
                 stopSequences();
                 pixelBackdropSequence();
             }
@@ -234,7 +232,7 @@ public class ArmUtils {
     public void extend(Gamepad gamepad) {
         if (sequenceActive && gamepad.right_stick_y != 0) stopSequences();
 
-        if (-armExtend.getCurrentPosition() < ARM_EXTEND_LIMIT || -gamepad.right_stick_y < 0) {
+        if ((-armExtend.getCurrentPosition() < ARM_EXTEND_MAX_LIMIT || -gamepad.right_stick_y < 0) && (-armExtend.getCurrentPosition() > ARM_EXTEND_MIN_LIMIT || -gamepad.right_stick_y > 0)) {
             armExtend.setPower(-gamepad.right_stick_y * ARM_EXTEND_SPEED);
         }
         else armExtend.setPower(0);

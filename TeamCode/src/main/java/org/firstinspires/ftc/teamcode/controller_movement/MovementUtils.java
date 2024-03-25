@@ -11,8 +11,8 @@ import org.firstinspires.ftc.teamcode.roadrunner.util.PoseStorage;
 public class MovementUtils {
     final double AXIAL_SPEED = 1;
     final double LATERAL_SPEED = 1;
-    final double YAW_SPEED = 0.8;
-    final double SLOW_MODE_MULTIPLIER = 0.4;
+    final double YAW_SPEED = 1;
+    final double SLOW_MODE_MULTIPLIER = 0.3;
 
     DcMotor frontLeftMotor;
     DcMotor backLeftMotor;

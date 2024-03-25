@@ -29,41 +29,46 @@ public class MeepMeepTesting {
     }
 
     static Alliance alliance() {
-        return Alliance.RED;
+        return Alliance.BLUE;
     }
     static InitialPosition initialPosition() {
-        return InitialPosition.REAR;
+        return InitialPosition.FRONT;
     }
     static Parking parking() {
         return Parking.NEAR;
     }
-    static SpikePosition spikePosition = SpikePosition.LEFT;
+    static SpikePosition spikePosition = SpikePosition.RIGHT;
 
     static final double TILE_SIZE = 23.4;
     static final double STAGE_SIZE = 70.3;
-    static final double ROBOT_SIZE = 18;
+    static final double ROBOT_SIZE = 17;
 
     // Go to prop
-    static final double SPIKE_Y = 30; // Y distance to spike
-    static final double SPIKE_SIDE_X = 4; // How much to move to spike's side
-    static final double PIXEL_RELEASE_OFFSET = -0.75; // Offset when to release pixel
-    static final double BACK_UP = 5; // Distance to go back after placing pixel
+    static final double SPIKE_Y = 28; // Y distance to spike
+    static final double SPIKE_CENTER_Y = 29; // Y distance to spike center
+    static final double SPIKE_SIDE_X = 0.1; // How much to move to spike's side
+    static final double PIXEL_RELEASE_OFFSET = -0.5; // Offset when to release pixel
+    static final double BACK_UP = 2; // Distance to go back after placing pixel
 
     // Backdrop
     static final double FRONT_DOWN = TILE_SIZE; // Y position to move to after placing pixel on spike in front
-    static final double BACKDROP_CENTER_POS_Y = TILE_SIZE * 1.5; // The backdrop's Y position from the edge of the stage
-    static final double BACKDROP_SIDE_OFFSET = TILE_SIZE * 0.25; // How much to move from the center of the backdrop to the left or right of the backdrop
+    static final double BACKDROP_POS_X = STAGE_SIZE - TILE_SIZE * 0.5 - ROBOT_SIZE / 1.8;
+    static final double BACKDROP_CENTER_POS_Y = TILE_SIZE * 1.3; // The backdrop's Y position from the edge of the stage
+    static final double BACKDROP_SIDE_OFFSET = TILE_SIZE * 0.3; // How much to move from the center of the backdrop to the left or right of the backdrop
     static final double WAIT_BEFORE_BACKDROP = 0.5; // Time to wait before going to backdrop
-    static final double EXTEND_OFFSET = 1; // How much time to wait after starting sequence before extending arm
-    static final int ARM_SEQUENCE_TARGET = 300; // Arm lift target for lowering arm
-    static final double WAIT_BEFORE_RELEASE = 1; // How much time to wait before releasing pixel
+    static final double EXTEND_OFFSET = 1.5; // How much time to wait after starting sequence before extending arm
+    static final int BACKDROP_ARM_TARGET = 1700; // Arm lift target for raising arm
+    static final int BACKDROP_EXTEND_TARGET = 1200; // Arm extend target for raising arm
+    static final int ARM_SEQUENCE_TARGET = 200; // Arm lift target for lowering arm
+    static final double WAIT_BEFORE_RELEASE = 2; // How much time to wait before releasing pixel
     static final double WAIT_AFTER_RELEASE = 0.5; // How much time to wait after releasing pixel
     static final double WAIT_FOR_RAISE = 1; // How much time to wait for the arm to raise
     static final double RESET_ARM_OFFSET = 0.5; // Offset when to start putting arm down
 
     // Parking
-    static final double NEAR_PARKING = TILE_SIZE * 0.5;
-    static final double FAR_PARKING = TILE_SIZE * 3;
+    static final double PARKING_INTERMEDIATE_X = BACKDROP_POS_X - 10;
+    static final double NEAR_PARKING = TILE_SIZE * 0.12;
+    static final double FAR_PARKING = TILE_SIZE * 2.5;
 
     static double advanceToZero(double pos, double distance) {
         return pos - Math.signum(pos) * distance;
@@ -97,7 +102,7 @@ public class MeepMeepTesting {
             startingX = TILE_SIZE / 2;
         }
         else if (initialPosition() == InitialPosition.REAR) {
-            startingX = -(TILE_SIZE * 1.5);
+            startingX = -(TILE_SIZE * 1.53);
         }
 
         if (alliance() == Alliance.BLUE) {
@@ -117,7 +122,7 @@ public class MeepMeepTesting {
         double spikeRot = startPose.getHeading();
 
         if (spikePosition == SpikePosition.CENTER) {
-            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
+            spikePosY = advanceToZero(spikePosY, SPIKE_CENTER_Y);
         }
         else if (spikePosition == SpikePosition.LEFT) {
             spikePosY = advanceToZero(spikePosY, SPIKE_Y);
@@ -145,7 +150,6 @@ public class MeepMeepTesting {
         }
 
         // Go to backdrop
-        double backdropPosX = STAGE_SIZE - TILE_SIZE * 0.75;
         double backdropPosY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);;
         if (spikePosition == SpikePosition.LEFT) {
             backdropPosY += BACKDROP_SIDE_OFFSET;
@@ -154,12 +158,12 @@ public class MeepMeepTesting {
             backdropPosY -= BACKDROP_SIDE_OFFSET;
         }
 
-        Vector2d backdropPose = new Vector2d(backdropPosX, backdropPosY);
+        Vector2d backdropPose = new Vector2d(BACKDROP_POS_X, backdropPosY);
 
         double spikeCenterX = startPose.getX();
         double spikeCenterY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);
 
-        double rearIntermediateY = advanceToZero(getStageEdge(), TILE_SIZE * 2.5);
+        double rearIntermediateY = advanceToZero(getStageEdge(), TILE_SIZE * 2.75);
 
         // Park
         double parkIntermediateY = advanceToZero(getStageEdge(), parking() == Parking.NEAR ? NEAR_PARKING : FAR_PARKING);
@@ -178,15 +182,17 @@ public class MeepMeepTesting {
                 .followTrajectorySequence(drive ->
                         drive.trajectorySequenceBuilder(startPose)
                                 .lineTo(new Vector2d(spikeCenterX, spikeCenterY)) // Go to spike center
-                                .splineTo(new Vector2d(finalSpikePosX, finalSpikePosY), finalSpikeRot) // Go to specific position on spike
+                                .lineTo(new Vector2d(finalSpikePosX, finalSpikePosY)) // Go to specific position on spike
+                                .lineToLinearHeading(new Pose2d(finalSpikePosX + 0.01, finalSpikePosY + 0.01, finalSpikeRot)) // Rotate to spike
                                 .UNSTABLE_addTemporalMarkerOffset(PIXEL_RELEASE_OFFSET, () -> System.out.println("Released pixel")) // Release pixel
                                 .back(BACK_UP) // Move back
                                 .waitSeconds(WAIT_BEFORE_BACKDROP)
-                                .lineToLinearHeading(new Pose2d(spikeCenterX, beforeBackdropY, Math.toRadians(0.00))) // Go up (front) Go forward (rear)
+                                .lineTo(new Vector2d(spikeCenterX, beforeBackdropY)) // Go up (front) Go forward (rear)
+                                .lineToLinearHeading(new Pose2d(spikeCenterX + 0.1, beforeBackdropY + 0.1, Math.toRadians(0.00))) // Rotate to 0
                                 .lineTo(new Vector2d(beforeBackdropX, beforeBackdropY)) // Go to center (rear)
                                 .addTemporalMarker(() -> System.out.println("Raising arm")) // Prepare arm for backdrop
                                 .UNSTABLE_addTemporalMarkerOffset(EXTEND_OFFSET, () -> System.out.println("Extending arm")) // Extend arm
-                                .splineToConstantHeading(backdropPose, Math.toRadians(0.00)) // Go to backdrop
+                                .lineToConstantHeading(new Vector2d(backdropPose.getX(), backdropPose.getY())) // Go to backdrop
                                 .addTemporalMarker(() -> System.out.println("Lowering arm")) // Lower arm
                                 .waitSeconds(WAIT_BEFORE_RELEASE)
                                 .addTemporalMarker(() -> System.out.println("Released pixel")) // Release pixel
@@ -194,8 +200,10 @@ public class MeepMeepTesting {
                                 .addTemporalMarker(() -> System.out.println("Raising arm")) // Raise arm
                                 .waitSeconds(WAIT_FOR_RAISE)
                                 .UNSTABLE_addTemporalMarkerOffset(RESET_ARM_OFFSET, () -> System.out.println("Putting arm down")) // Put down arm
-                                .lineTo(new Vector2d(backdropPosX, parkIntermediateY)) // Strafe to the side
-                                .lineToLinearHeading(new Pose2d(parkX, parkIntermediateY, Math.toRadians(180.00))) // Park
+                                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, backdropPose.getY())) // Go back
+                                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, parkIntermediateY)) // Strafe to the side
+                                .lineToLinearHeading(new Pose2d(PARKING_INTERMEDIATE_X + 0.1, parkIntermediateY + 0.1, Math.toRadians(180.00))) // Rotate to 180
+                                .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
                                 .build()
                 );
 
