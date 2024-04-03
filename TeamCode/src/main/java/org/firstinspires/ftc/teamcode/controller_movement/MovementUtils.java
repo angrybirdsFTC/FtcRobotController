@@ -66,38 +66,6 @@ public class MovementUtils {
         yawMultiplier = YAW_SPEED * (slowModeActive ? SLOW_MODE_MULTIPLIER : 1);
     }
 
-    public void vectorsMovement(Gamepad gamepad) {
-        calculateMultipliers(gamepad);
-
-        double axial = -gamepad.left_stick_x * lateralMultiplier;
-        double lateral = gamepad.left_stick_y * axialMultiplier;
-        double yaw = gamepad.right_stick_x * yawMultiplier;
-
-        double theta = Math.atan2(lateral, axial);
-        double power = Math.hypot(axial, lateral);
-
-        double sin = Math.sin(theta - Math.PI / 4);
-        double cos = Math.cos(theta - Math.PI / 4);
-        double max = Math.max(Math.abs(sin), Math.abs(cos));
-
-        double frontLeftMotorPower = (power * cos/max + yaw);
-        double frontRightMotorPower = (power * sin/max - yaw);
-        double backLeftMotorPower = (power * sin/max + yaw);
-        double backRightMotorPower = (power * cos/max - yaw);
-
-        if ((power + Math.abs(yaw)) > 1) {
-            frontLeftMotorPower /= power + yaw;
-            frontRightMotorPower /= power + yaw;
-            backLeftMotorPower /= power + yaw;
-            backRightMotorPower /= power + yaw;
-        }
-
-        frontLeftMotor.setPower(frontLeftMotorPower);
-        frontRightMotor.setPower(frontRightMotorPower);
-        backLeftMotor.setPower(backLeftMotorPower);
-        backRightMotor.setPower(backRightMotorPower);
-    }
-
     public void roadrunnerMovement(Gamepad gamepad) {
         calculateMultipliers(gamepad);
 
