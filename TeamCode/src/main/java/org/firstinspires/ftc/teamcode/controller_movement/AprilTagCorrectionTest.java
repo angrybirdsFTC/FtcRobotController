@@ -2,6 +2,10 @@ package org.firstinspires.ftc.teamcode.controller_movement;
 
 import android.annotation.SuppressLint;
 import android.util.Size;
+
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
@@ -9,7 +13,8 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-
+import org.firstinspires.ftc.teamcode.roadrunner.trajectorysequence.TrajectorySequence;
+import org.firstinspires.ftc.teamcode.roadrunner.drive.SampleMecanumDrive;
 import java.util.List;
 
 @TeleOp(name="AprilTagCorrectionTest", group = "SA_FTC")
@@ -22,27 +27,61 @@ public class AprilTagCorrectionTest extends LinearOpMode {
      */
     private AprilTagProcessor aprilTag;
 
-    final int TARGET_ID = 1;
+    MovementUtils movementUtils = new MovementUtils(hardwareMap);
+    int TARGET_ID = 3;
     final double BACKDROP_SPACE_DISTANCE = 10;
+
+    double correctionX;
+    double correctionY;
     /**
      * The variable to store our instance of the vision portal.
      */
     private VisionPortal visionPortal;
 
+    //MovementUtils movement = new MovementUtils(HardwareMap);
+
     //returns the correction
     public double correctDistanceY(double yDistance, double TargetY) {
-        return Math.abs(yDistance - TargetY);
+        double correction = yDistance - TargetY;
+        return Math.abs(correction);
     }
 
     // This is used for the Strafe movement only
     public double correctDistanceX(double xDistance, double TargetX) {
-        return Math.abs(xDistance - TargetX);
+        double correction = xDistance - TargetX;
+        return Math.abs(correction);
     }
 
     // returns the correction regarding the robot's angle
     public double correctAngle(double AprilTagAngle, double TargerAngle) {
         return AprilTagAngle - TargerAngle;
     }
+
+    public void MoveWithCorrectionY(double correction) {
+        Trajectory t1 =  movementUtils.drive.trajectoryBuilder(new Pose2d())
+                .forward(correction)
+                .build();
+        movementUtils.drive.followTrajectory(t1);
+    }
+
+    public void MoveWithCorrectionX(double correction) {
+        Trajectory t2;
+
+        if (correction > 0) {
+            t2 = movementUtils.drive.trajectoryBuilder(new Pose2d())
+                    .strafeLeft(correction)
+                    .build();
+        }
+
+        else {
+            t2 = movementUtils.drive.trajectoryBuilder(new Pose2d())
+                    .strafeRight(correction)
+                    .build();
+        }
+
+        movementUtils.drive.followTrajectory(t2);
+    }
+
     @Override
     public void runOpMode() {
 
@@ -69,6 +108,22 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                     visionPortal.resumeStreaming();
                 }
 
+                if (gamepad1.a) {
+                    TARGET_ID = 1;
+                }
+                if (gamepad1.b) {
+                    TARGET_ID = 2;
+                }
+                else if (gamepad1.y) {
+                    TARGET_ID = 3;
+                }
+
+                if (gamepad1.right_bumper) {
+                    MoveWithCorrectionX(correctionX);
+                }
+                if (gamepad1.left_bumper) {
+                    MoveWithCorrectionY(correctionY);
+                }
                 // Share the CPU.
                 sleep(20);
             }
@@ -98,7 +153,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 // == CAMERA CALIBRATION ==
                 // If you do not manually specify calibration parameters, the SDK will attempt
                 // to load a predefined calibration for your camera.
-                //.setLensIntrinsics(578.272, 578.272, 402.145, 221.506)
+                .setLensIntrinsics(578.272, 578.272, 402.145, 221.506)
                 // ... these parameters are fx, fy, cx, cy.
 
                 .build();
@@ -152,7 +207,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
      * Add telemetry about AprilTag detections.
      */
     @SuppressLint("DefaultLocale")
-    private void telemetryAprilTag() {
+    public void telemetryAprilTag() {
 
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
         telemetry.addData("# AprilTags Detected", currentDetections.size());
@@ -167,8 +222,11 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
 
                 telemetry.addData("Forward correction: ", correctDistanceY(detection.ftcPose.y, BACKDROP_SPACE_DISTANCE));
-                telemetry.addData("Angle correction: ", correctAngle(detection.ftcPose.bearing, 0));
+                telemetry.addData("Angle correction: ", correctAngle(detection.ftcPose.roll, 0));
                 telemetry.addData("Strafe correction: ",correctDistanceX(detection.ftcPose.x, 0));
+
+                correctionX = correctDistanceX(detection.ftcPose.x, 0);
+                correctionY = correctDistanceY(detection.ftcPose.y, BACKDROP_SPACE_DISTANCE);
             }
         }   // end for() loop
 

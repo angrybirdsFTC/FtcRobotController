@@ -40,6 +40,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.List;
+import java.util.Objects;
 
 @Autonomous(name = "Prop Detection")
 public class DetectProp extends LinearOpMode {
@@ -130,7 +131,7 @@ public class DetectProp extends LinearOpMode {
     /**
      * Add telemetry about TensorFlow Object Detection (TFOD) recognitions.
      */
-    private void telemetryTfod() {
+    public float telemetryTfod() {
         List<Recognition> currentRecognitions = tfod.getRecognitions();
         telemetry.addData("# Objects Detected", currentRecognitions.size());
 
@@ -143,28 +144,36 @@ public class DetectProp extends LinearOpMode {
             telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
             telemetry.addData("- Position", "%.0f / %.0f", x, y);
             telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
-            telemetry.addData("Prop spike position: ", getSpikePosition());
+            if (Objects.equals(recognition.getLabel(), "blueprop")) {
+                return recognition.getWidth();
+            }
+
+            //telemetry.addData("Prop spike position: ", getSpikePosition());
         }
+
+        return 0;
     }
 
-    public SpikePosition getSpikePosition() {
+    public SpikePosition getSpikePosition(String propName) {
         List<Recognition> currentRecognitions = tfod.getRecognitions();
 
         for (Recognition recognition : currentRecognitions) {
-            double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
+            if (Objects.equals(recognition.getLabel(), propName) && recognition.getWidth() <= 120) {
+                double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
 
-            if (x <= LEFT_X) {
-                return SpikePosition.LEFT;
-            }
-            else if (x > LEFT_X && x < RIGHT_X) {
-                return SpikePosition.CENTER;
-            }
-            else if (x >= RIGHT_X) {
-                return SpikePosition.RIGHT;
+                if (x <= LEFT_X) {
+                    return SpikePosition.LEFT;
+                }
+                else if (x > LEFT_X && x < RIGHT_X) {
+                    return SpikePosition.CENTER;
+                }
+                else if (x >= RIGHT_X) {
+                    return SpikePosition.RIGHT;
+                }
             }
         }
 
-        return SpikePosition.NONE;
+        return SpikePosition.CENTER;
     }
 
     @Override

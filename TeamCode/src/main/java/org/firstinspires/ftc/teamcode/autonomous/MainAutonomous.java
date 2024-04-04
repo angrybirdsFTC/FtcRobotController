@@ -22,20 +22,21 @@ public abstract class MainAutonomous extends OpMode {
     // Go to prop
     final double SPIKE_Y = 28; // Y distance to spike
     final double SPIKE_CENTER_Y = 29; // Y distance to spike center
-    final double SPIKE_SIDE_X = 0.1; // How much to move to spike's side
+    final double SPIKE_SIDE_X = 2; // How much to move to spike's side
     final double PIXEL_RELEASE_OFFSET = -0.5; // Offset when to release pixel
-    final double BACK_UP = 2; // Distance to go back after placing pixel
+    double BACK_UP = 2; // Distance to go back after placing pixel
 
     // Backdrop
     final double FRONT_DOWN = TILE_SIZE; // Y position to move to after placing pixel on spike in front
-    final double BACKDROP_POS_X = STAGE_SIZE - TILE_SIZE * 0.5 - ROBOT_SIZE / 1.8;
-    final double BACKDROP_CENTER_POS_Y = TILE_SIZE * 1.3; // The backdrop's Y position from the edge of the stage
-    final double BACKDROP_SIDE_OFFSET = TILE_SIZE * 0.15; // How much to move from the center of the backdrop to the left or right of the backdrop
+    final double BACKDROP_POS_X = STAGE_SIZE - TILE_SIZE * 0.5 - ROBOT_SIZE / 2.5;
+    final double BACKDROP_CENTER_POS_Y = TILE_SIZE * 1.2; // The backdrop's Y position from the edge of the stage
+    final double BACKDROP_LEFT_OFFSET = TILE_SIZE * 0.1; // How much to move from the center of the backdrop to the left of the backdrop
+    final double BACKDROP_RIGHT_OFFSET = TILE_SIZE * 0.3; // How much to move from the center of the backdrop to the right of the backdrop
     final double WAIT_BEFORE_BACKDROP = 0.5; // Time to wait before going to backdrop
     final double EXTEND_OFFSET = 1.5; // How much time to wait after starting sequence before extending arm
     final int BACKDROP_ARM_TARGET = 1700; // Arm lift target for raising arm
-    final int BACKDROP_EXTEND_TARGET = 1200; // Arm extend target for raising arm
-    final int ARM_SEQUENCE_TARGET = 200; // Arm lift target for lowering arm
+    final int BACKDROP_EXTEND_TARGET = 1400; // Arm extend target for raising arm
+    final int ARM_SEQUENCE_TARGET = 300; // Arm lift target for lowering arm
     final double WAIT_BEFORE_RELEASE = 2; // How much time to wait before releasing pixel
     final double WAIT_AFTER_RELEASE = 0.5; // How much time to wait after releasing pixel
     final double WAIT_FOR_RAISE = 1; // How much time to wait for the arm to raise
@@ -85,6 +86,7 @@ public abstract class MainAutonomous extends OpMode {
     ArmUtils.ExtendDirection sequenceDirection = ArmUtils.ExtendDirection.UNINITIALIZED;
     boolean sequenceGotToPosition = false;
     int prevExtendTarget = 0;
+    boolean temp = false;
 
     double advanceToZero(double pos, double distance) {
         return pos - Math.signum(pos) * distance;
@@ -131,10 +133,10 @@ public abstract class MainAutonomous extends OpMode {
         // Go to backdrop
         double backdropPosY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);;
         if (spikePosition == DetectProp.SpikePosition.LEFT) {
-            backdropPosY += BACKDROP_SIDE_OFFSET;
+            backdropPosY += BACKDROP_LEFT_OFFSET;
         }
         else if (spikePosition == DetectProp.SpikePosition.RIGHT) {
-            backdropPosY -= BACKDROP_SIDE_OFFSET;
+            backdropPosY -= BACKDROP_RIGHT_OFFSET;
         }
 
         Vector2d backdropPose = new Vector2d(BACKDROP_POS_X, backdropPosY);
@@ -142,14 +144,22 @@ public abstract class MainAutonomous extends OpMode {
         double spikeCenterX = startPose.getX();
         double spikeCenterY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);
 
-        double rearIntermediateY = advanceToZero(getStageEdge(), TILE_SIZE * 2.75);
+        double rearIntermediateY = advanceToZero(getStageEdge(), TILE_SIZE * 2.7);
 
         // Park
         double parkIntermediateY = advanceToZero(getStageEdge(), parking() == Parking.NEAR ? NEAR_PARKING : FAR_PARKING);
         double parkX = STAGE_SIZE - TILE_SIZE / 2;
 
         double beforeBackdropY = initialPosition() == InitialPosition.FRONT ? advanceToZero(getStageEdge(), FRONT_DOWN) : rearIntermediateY;
-        double beforeBackdropX = initialPosition() == InitialPosition.FRONT ? spikeCenterX + 0.1 : 0; // + 0.1 for no EmptyPathSegmentException
+        double beforeBackdropX1;
+        if (spikePosition == DetectProp.SpikePosition.CENTER) {
+            beforeBackdropX1 = initialPosition() == InitialPosition.FRONT ? spikeCenterX + 0.1 : spikeCenterX - TILE_SIZE * 0.8; // + 0.1 for no EmptyPathSegmentException
+            BACK_UP = 6;
+        }
+        else {
+            beforeBackdropX1 = spikeCenterX + 0.1;
+        }
+        double beforeBackdropX2 = initialPosition() == InitialPosition.FRONT ? spikeCenterX + 0.1 : 0; // + 0.1 for no EmptyPathSegmentException
 
         // Build trajectory sequence
         TrajectorySequence trajectorySequence = drive.trajectorySequenceBuilder(startPose)
@@ -174,9 +184,10 @@ public abstract class MainAutonomous extends OpMode {
                     rightGripTarget = ArmUtils.GRIP_OPEN;
                 }) // Raise arm
                 .waitSeconds(WAIT_BEFORE_BACKDROP)
-                .lineTo(new Vector2d(spikeCenterX, beforeBackdropY)) // Go up (front) Go forward (rear)
-                .lineToLinearHeading(new Pose2d(spikeCenterX + 0.1, beforeBackdropY + 0.1, Math.toRadians(0.00))) // Rotate to 0
-                .lineTo(new Vector2d(beforeBackdropX, beforeBackdropY)) // Go to center (rear)
+                .lineTo(new Vector2d(beforeBackdropX1, spikePosY)) // Nothing (front) Go towards back (rear)
+                .lineTo(new Vector2d(beforeBackdropX1, beforeBackdropY)) // Go up (front) Go forward (rear)
+                .lineToLinearHeading(new Pose2d(beforeBackdropX1 + 0.1, beforeBackdropY + 0.1, Math.toRadians(0.00))) // Rotate to 0
+                .lineTo(new Vector2d(beforeBackdropX2, beforeBackdropY)) // Go to center (rear)
                 .addTemporalMarker(() -> {
                     resetSequence();
                     armTarget = BACKDROP_ARM_TARGET;
@@ -214,23 +225,23 @@ public abstract class MainAutonomous extends OpMode {
                 .waitSeconds(WAIT_AFTER_RELEASE)
                 .addTemporalMarker(() -> {
                     resetSequence();
-                    armLift.setPower(0.1);
-                    armTarget = BACKDROP_ARM_TARGET;
+                    armTarget = ARM_SEQUENCE_TARGET + 200;
                     extendTarget = BACKDROP_EXTEND_TARGET;
                     rollerTarget = ArmUtils.ROLLER_FLAT;
                     leftGripTarget = ArmUtils.GRIP_OPEN;
                     rightGripTarget = ArmUtils.GRIP_OPEN;
-                }) // Raise arm
+                }) // Close arm
+                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, backdropPose.getY())) // Go back
                 .waitSeconds(WAIT_FOR_RAISE)
-                .UNSTABLE_addTemporalMarkerOffset(RESET_ARM_OFFSET, () -> {
+                .addTemporalMarker(() -> {
                     resetSequence();
+                    temp = true;
                     armTarget = -200;
                     extendTarget = ArmUtils.ARM_EXTEND_MIN_LIMIT;
                     rollerTarget = ArmUtils.ROLLER_FLAT;
                     leftGripTarget = ArmUtils.GRIP_CLOSED;
                     rightGripTarget = ArmUtils.GRIP_CLOSED;
-                }) // Put down arm
-                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, backdropPose.getY())) // Go back
+                }) // Close arm
                 .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, parkIntermediateY)) // Strafe to the side
                 .lineToLinearHeading(new Pose2d(PARKING_INTERMEDIATE_X + 0.1, parkIntermediateY + 0.1, Math.toRadians(180.00))) // Rotate to 180
                 .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
@@ -251,7 +262,11 @@ public abstract class MainAutonomous extends OpMode {
         leftGrip.setPosition(leftGripTarget);
         rightGrip.setPosition(rightGripTarget);
 
-        if (prevExtendTarget != extendTarget) {
+        if (temp) {
+            armExtend.setPower(-0.5);
+        }
+
+        if (prevExtendTarget != extendTarget || temp) {
             if (!sequenceGotToPosition && armLift.getCurrentPosition() > 100) {
                 if (-armExtend.getCurrentPosition() < extendTarget && sequenceDirection != ArmUtils.ExtendDirection.BACKWARD) {
                     sequenceDirection = ArmUtils.ExtendDirection.FORWARD;
@@ -347,7 +362,9 @@ public abstract class MainAutonomous extends OpMode {
 
     @Override
     public void init_loop() {
-        spikePosition = detectProp.getSpikePosition();
+        spikePosition = detectProp.getSpikePosition(alliance() == Alliance.BLUE ? "blueprop" : "redprop");
+        telemetry.addData("size", detectProp.telemetryTfod());
+        telemetry.update();
     }
 
     @Override
