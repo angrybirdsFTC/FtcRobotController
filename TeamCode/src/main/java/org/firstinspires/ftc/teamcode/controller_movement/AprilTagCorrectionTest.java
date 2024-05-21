@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.util.Size;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -48,13 +49,12 @@ public class AprilTagCorrectionTest extends LinearOpMode {
 
     // This is used for the Strafe movement only
     public double correctDistanceX(double xDistance, double TargetX) {
-        double correction = xDistance - TargetX;
-        return Math.abs(correction);
+        return xDistance - TargetX;
     }
 
     // returns the correction regarding the robot's angle
-    public double correctAngle(double AprilTagAngle, double TargerAngle) {
-        return AprilTagAngle - TargerAngle;
+    public double correctAngle(double AprilTagAngle, double TargetAngle) {
+        return AprilTagAngle - TargetAngle;
     }
 
     public void MoveWithCorrectionY(double correction) {
@@ -75,13 +75,18 @@ public class AprilTagCorrectionTest extends LinearOpMode {
 
         else {
             t2 = movementUtils.drive.trajectoryBuilder(new Pose2d())
-                    .strafeRight(correction)
+                    .strafeRight(Math.abs(correction))
                     .build();
         }
 
         movementUtils.drive.followTrajectory(t2);
     }
 
+    public void MoveWithSpline(double correctionX, double correctionY, double angle_correction) {
+        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d())
+                .lineToSplineHeading(new Pose2d(correctionX, correctionY, Math.toRadians(angle_correction)))
+                .build();
+    }
     @Override
     public void runOpMode() {
 
@@ -96,7 +101,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         if (opModeIsActive()) {
             while (opModeIsActive()) {
 
-                telemetryAprilTag();
+                telemetryAprilTag(TARGET_ID);
 
                 // Push telemetry to the Driver Station.
                 telemetry.update();
@@ -207,14 +212,14 @@ public class AprilTagCorrectionTest extends LinearOpMode {
      * Add telemetry about AprilTag detections.
      */
     @SuppressLint("DefaultLocale")
-    public void telemetryAprilTag() {
+    public void telemetryAprilTag(int target_id) {
 
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
         telemetry.addData("# AprilTags Detected", currentDetections.size());
 
         // Step through the list of detections and display info for each one.
         for (AprilTagDetection detection : currentDetections) {
-            if (detection.id == TARGET_ID) {
+            if (detection.id == target_id) {
                 telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
                 telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
                 telemetry.addLine("Distance from AprilTag: " + detection.ftcPose.y);
