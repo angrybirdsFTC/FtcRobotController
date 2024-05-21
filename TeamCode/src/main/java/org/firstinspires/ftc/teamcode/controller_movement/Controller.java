@@ -34,8 +34,9 @@ public class Controller extends LinearOpMode {
 
         // Run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            //movementUtils.movement(gamepad1);
-            movementUtils.fieldCentricMovement(gamepad1);
+            movementUtils.movement(gamepad1);
+            //movementUtils.fieldCentricMovement(gamepad1);
+            //movementUtils.testMovement(gamepad1);
             armUtils.roller(gamepad2);
             armUtils.extend(gamepad2);
             armUtils.lift(gamepad2);

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.controller_movement;
 
+import com.acmerobotics.roadrunner.control.PIDFController;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -32,6 +33,9 @@ public class MovementUtils {
 
     SampleMecanumDrive drive;
 
+    PIDFController headingController = new PIDFController(SampleMecanumDrive.HEADING_PID);
+    Vector2d targetPosition = new Vector2d(0, 0);
+
     public MovementUtils(HardwareMap hardwareMap) {
         // Initialize SampleMecanumDrive
         drive = new SampleMecanumDrive(hardwareMap);
@@ -42,6 +46,8 @@ public class MovementUtils {
 
         // Retrieve our pose from the PoseStorage.currentPose static field
         drive.setPoseEstimate(PoseStorage.currentPose);
+
+        headingController.setInputBounds(-Math.PI, Math.PI);
     }
 
     void calculateMultipliers(Gamepad gamepad) {
@@ -91,5 +97,53 @@ public class MovementUtils {
 
         // Update everything. Odometry. Etc.
         drive.update();
+    }
+
+    public void testMovement(Gamepad gamepad) {
+        // Read pose
+        Pose2d poseEstimate = drive.getLocalizer().getPoseEstimate();
+
+        // Declare a drive direction
+        // Pose representing desired x, y, and angular velocity
+        Pose2d driveDirection;
+
+        // Create a vector from the gamepad x/y inputs which is the field relative movement
+        // Then, rotate that vector by the inverse of that heading for field centric control
+        Vector2d fieldFrameInput = new Vector2d(
+                -gamepad.left_stick_y,
+                -gamepad.left_stick_x
+        );
+        Vector2d robotFrameInput = fieldFrameInput.rotated(-poseEstimate.getHeading());
+
+        // Difference between the target vector and the bot's position
+        Vector2d difference = targetPosition.minus(poseEstimate.vec());
+        // Obtain the target angle for feedback and derivative for feedforward
+        double theta = difference.angle();
+
+        // Not technically omega because its power. This is the derivative of atan2
+        double thetaFF = -fieldFrameInput.rotated(-Math.PI / 2).dot(difference) / (difference.norm() * difference.norm());
+
+        // Set the target heading for the heading controller to our desired angle
+        headingController.setTargetPosition(theta);
+
+        // Set desired angular velocity to the heading controller output + angular
+        // velocity feedforward
+        double headingInput = (headingController.update(poseEstimate.getHeading())
+                * DriveConstants.kV + thetaFF)
+                * DriveConstants.TRACK_WIDTH;
+
+        // Combine the field centric x/y velocity with our derived angular velocity
+        driveDirection = new Pose2d(
+                robotFrameInput,
+                headingInput
+        );
+
+        drive.setWeightedDrivePower(driveDirection);
+
+        // Update the heading controller with our current heading
+        headingController.update(poseEstimate.getHeading());
+
+        // Update he localizer
+        drive.getLocalizer().update();
     }
 }

@@ -26,14 +26,17 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     /**
      * The variable to store our instance of the AprilTag processor.
      */
-    private AprilTagProcessor aprilTag;
 
-    MovementUtils movementUtils = new MovementUtils(hardwareMap);
+
+    private AprilTagProcessor aprilTag;
     int TARGET_ID = 3;
     final double BACKDROP_SPACE_DISTANCE = 10;
 
     double correctionX;
     double correctionY;
+
+    double correctionAngle;
+
     /**
      * The variable to store our instance of the vision portal.
      */
@@ -57,32 +60,32 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         return AprilTagAngle - TargetAngle;
     }
 
-    public void MoveWithCorrectionY(double correction) {
+    public void MoveWithCorrectionY(double correction, MovementUtils movementUtils) {
         Trajectory t1 =  movementUtils.drive.trajectoryBuilder(new Pose2d())
                 .forward(correction)
                 .build();
         movementUtils.drive.followTrajectory(t1);
     }
 
-    public void MoveWithCorrectionX(double correction) {
+    public void MoveWithCorrectionX(double correction, MovementUtils movementUtils) {
         Trajectory t2;
 
-        if (correction > 0) {
+        if (correction < 0) {
             t2 = movementUtils.drive.trajectoryBuilder(new Pose2d())
-                    .strafeLeft(correction)
+                    .strafeRight(Math.abs(correction))
                     .build();
         }
 
         else {
             t2 = movementUtils.drive.trajectoryBuilder(new Pose2d())
-                    .strafeRight(Math.abs(correction))
+                    .strafeLeft(Math.abs(correction))
                     .build();
         }
 
         movementUtils.drive.followTrajectory(t2);
     }
 
-    public void MoveWithSpline(double correctionX, double correctionY, double angle_correction) {
+    public void MoveWithSpline(double correctionX, double correctionY, double angle_correction, MovementUtils movementUtils) {
         Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d())
                 .lineToSplineHeading(new Pose2d(correctionX, correctionY, Math.toRadians(angle_correction)))
                 .build();
@@ -90,6 +93,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     }
     @Override
     public void runOpMode() {
+        MovementUtils movementUtils = new MovementUtils(hardwareMap);
 
         initAprilTag();
 
@@ -105,6 +109,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetryAprilTag(TARGET_ID);
 
                 // Push telemetry to the Driver Station.
+                telemetry.addData("Target ID: ", TARGET_ID);
                 telemetry.update();
 
                 // Save CPU resources; can resume streaming when needed.
@@ -125,10 +130,13 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 }
 
                 if (gamepad1.right_bumper) {
-                    MoveWithCorrectionX(correctionX);
+                    MoveWithCorrectionX(correctionX, movementUtils);
                 }
                 if (gamepad1.left_bumper) {
-                    MoveWithCorrectionY(correctionY);
+                    MoveWithCorrectionY(correctionY, movementUtils);
+                }
+                if (gamepad1.guide) {
+                    MoveWithSpline(-1 * correctionX,-1 * correctionY, -1 * correctionAngle, movementUtils);
                 }
                 // Share the CPU.
                 sleep(20);
@@ -231,6 +239,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("Angle correction: ", correctAngle(detection.ftcPose.roll, 0));
                 telemetry.addData("Strafe correction: ",correctDistanceX(detection.ftcPose.x, 0));
 
+                correctionAngle = correctAngle(detection.ftcPose.roll, 0);
                 correctionX = correctDistanceX(detection.ftcPose.x, 0);
                 correctionY = correctDistanceY(detection.ftcPose.y, BACKDROP_SPACE_DISTANCE);
             }
