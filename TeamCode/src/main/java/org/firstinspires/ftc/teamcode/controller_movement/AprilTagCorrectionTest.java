@@ -86,6 +86,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d())
                 .lineToSplineHeading(new Pose2d(correctionX, correctionY, Math.toRadians(angle_correction)))
                 .build();
+        movementUtils.drive.followTrajectory(t3);
     }
     @Override
     public void runOpMode() {
