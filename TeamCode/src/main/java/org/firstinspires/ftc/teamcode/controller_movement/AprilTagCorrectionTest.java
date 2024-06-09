@@ -32,10 +32,15 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     int TARGET_ID = 3;
     final double BACKDROP_SPACE_DISTANCE = 10;
 
+    double detectionX;
+    double detectionY;
+    double detectionYaw;
     double correctionX;
     double correctionY;
 
     double correctionAngle;
+
+    double SQUARE_SIDE = 24;
 
     /**
      * The variable to store our instance of the vision portal.
@@ -85,9 +90,13 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         movementUtils.drive.followTrajectory(t2);
     }
 
-    public void MoveWithSpline(double correctionX, double correctionY, double angle_correction, MovementUtils movementUtils) {
-        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d())
-                .lineToSplineHeading(new Pose2d(correctionX, correctionY, Math.toRadians(angle_correction)))
+    public void MoveWithSpline(double X, double Y, double angle, int tag_id,  MovementUtils movementUtils) {
+        double tagX = 2.5 * SQUARE_SIDE;
+        double tagY = SQUARE_SIDE * (1 + (4 - tag_id) * 0.25);
+        double posX = tagX - Y;
+        double posY = tagY + X;
+        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(angle)))
+                .splineToConstantHeading(new Vector2d(tagX - 5, tagY), Math.toRadians(0))
                 .build();
         movementUtils.drive.followTrajectory(t3);
     }
@@ -136,7 +145,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                     MoveWithCorrectionY(correctionY, movementUtils);
                 }
                 if (gamepad1.guide) {
-                    MoveWithSpline(-1 * correctionX,-1 * correctionY, -1 * correctionAngle, movementUtils);
+                    MoveWithSpline(detectionX, detectionY, detectionYaw, TARGET_ID, movementUtils);
                 }
                 // Share the CPU.
                 sleep(20);
@@ -205,7 +214,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         // If set "false", monitor shows camera view without annotations.
         //builder.setAutoStopLiveView(false);
 
-        // Set and enable the processor.
+        // Set and enable git the processor.
         builder.addProcessor(aprilTag);
 
         // Build the Vision Portal, using the above settings.
@@ -240,6 +249,9 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("Strafe correction: ",correctDistanceX(detection.ftcPose.x, 0));
 
                 correctionAngle = correctAngle(detection.ftcPose.roll, 0);
+                detectionX = detection.ftcPose.x;
+                detectionY = detection.ftcPose.y;
+                detectionYaw = detection.ftcPose.yaw;
                 correctionX = correctDistanceX(detection.ftcPose.x, 0);
                 correctionY = correctDistanceY(detection.ftcPose.y, BACKDROP_SPACE_DISTANCE);
             }
