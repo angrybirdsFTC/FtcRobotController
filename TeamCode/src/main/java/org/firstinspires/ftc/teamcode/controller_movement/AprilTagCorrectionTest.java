@@ -100,6 +100,14 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 .build();
         movementUtils.drive.followTrajectory(t3);
     }
+    public void MoveWithSpline2(double X, double Y, double angle,  MovementUtils movementUtils) {
+        double posX = - Y;
+        double posY = - X;
+        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(angle)))
+                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(0))
+                .build();
+        movementUtils.drive.followTrajectory(t3);
+    }
     @Override
     public void runOpMode() {
         MovementUtils movementUtils = new MovementUtils(hardwareMap);
