@@ -2,6 +2,7 @@ package com.example.meepmeeptesting;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
 import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
@@ -94,118 +95,142 @@ public class MeepMeepTesting {
 //                                .build()
 //                );
 
-        // Calculate starting position
-        double startingX = 0;
-        double startingY = 0;
-        double startingRotation = 0;
+//        // Calculate starting position
+//        double startingX = 0;
+//        double startingY = 0;
+//        double startingRotation = 0;
+//
+//        if (initialPosition() == InitialPosition.FRONT) {
+//            startingX = TILE_SIZE / 2;
+//        }
+//        else if (initialPosition() == InitialPosition.REAR) {
+//            startingX = -(TILE_SIZE * 1.53);
+//        }
+//
+//        if (alliance() == Alliance.BLUE) {
+//            startingY = STAGE_SIZE - ROBOT_SIZE / 2;
+//            startingRotation = Math.toRadians(270);
+//        }
+//        else if (alliance() == Alliance.RED) {
+//            startingY = -STAGE_SIZE + ROBOT_SIZE / 2;
+//            startingRotation = Math.toRadians(90);
+//        }
+//
+//        Pose2d startPose = new Pose2d(startingX, startingY, startingRotation);
+//
+//        // Go to prop
+//        double spikePosX = startPose.getX();
+//        double spikePosY = startPose.getY();
+//        double spikeRot = startPose.getHeading();
+//
+//        if (spikePosition == SpikePosition.CENTER) {
+//            spikePosY = advanceToZero(spikePosY, SPIKE_CENTER_Y);
+//        }
+//        else if (spikePosition == SpikePosition.LEFT) {
+//            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
+//
+//            if (alliance() == Alliance.BLUE) {
+//                spikePosX += SPIKE_SIDE_X;
+//                spikeRot = Math.toRadians(0);
+//            }
+//            else if (alliance() == Alliance.RED) {
+//                spikePosX -= SPIKE_SIDE_X;
+//                spikeRot = Math.toRadians(180);
+//            }
+//        }
+//        else if (spikePosition == SpikePosition.RIGHT) {
+//            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
+//
+//            if (alliance() == Alliance.BLUE) {
+//                spikePosX -= SPIKE_SIDE_X;
+//                spikeRot = Math.toRadians(180);
+//            }
+//            else if (alliance() == Alliance.RED) {
+//                spikePosX += SPIKE_SIDE_X;
+//                spikeRot = Math.toRadians(0);
+//            }
+//        }
+//
+//        // Go to backdrop
+//        double backdropPosY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);;
+//        if (spikePosition == SpikePosition.LEFT) {
+//            backdropPosY += BACKDROP_LEFT_OFFSET;
+//        }
+//        else if (spikePosition == SpikePosition.RIGHT) {
+//            backdropPosY -= BACKDROP_RIGHT_OFFSET;
+//        }
+//
+//        Vector2d backdropPose = new Vector2d(BACKDROP_POS_X, backdropPosY);
+//
+//        double spikeCenterX = startPose.getX();
+//        double spikeCenterY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);
+//
+//        double rearIntermediateY = advanceToZero(getStageEdge(), TILE_SIZE * 2.7);
+//
+//        // Park
+//        double parkIntermediateY = advanceToZero(getStageEdge(), parking() == Parking.NEAR ? NEAR_PARKING : FAR_PARKING);
+//        double parkX = STAGE_SIZE - TILE_SIZE / 2;
+//
+//        double beforeBackdropY = initialPosition() == InitialPosition.FRONT ? advanceToZero(getStageEdge(), FRONT_DOWN) : rearIntermediateY;
+//        double beforeBackdropX1;
+//        if (spikePosition == SpikePosition.CENTER) {
+//            beforeBackdropX1 = initialPosition() == InitialPosition.FRONT ? spikeCenterX + 0.1 : spikeCenterX - TILE_SIZE * 0.6; // + 0.1 for no EmptyPathSegmentException
+//        }
+//        else {
+//            beforeBackdropX1 = spikeCenterX + 0.1;
+//        }
+//        double beforeBackdropX2 = initialPosition() == InitialPosition.FRONT ? spikeCenterX + 0.1 : 0; // + 0.1 for no EmptyPathSegmentException
+//
+//        double finalSpikePosX = spikePosX;
+//        double finalSpikePosY = spikePosY;
+//        double finalSpikeRot = spikeRot;
+//        RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
+//                // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+//                .setConstraints(26.74330378369762, 28.78180821614297, 3.211860967940206, 3.211860967940206, 21.77)
+//                .setStartPose(startPose)
+//                .followTrajectorySequence(drive ->
+//                        drive.trajectorySequenceBuilder(startPose)
+//                                .lineTo(new Vector2d(spikeCenterX, spikeCenterY)) // Go to spike center
+//                                .lineTo(new Vector2d(finalSpikePosX, finalSpikePosY)) // Go to specific position on spike
+//                                .lineToLinearHeading(new Pose2d(finalSpikePosX + 0.01, finalSpikePosY + 0.01, finalSpikeRot)) // Rotate to spike
+//                                .back(BACK_UP) // Move back
+//                                .waitSeconds(WAIT_BEFORE_BACKDROP)
+//                                .lineTo(new Vector2d(beforeBackdropX1, finalSpikePosY)) // Nothing (front) Go towards back (rear)
+//                                .lineTo(new Vector2d(beforeBackdropX1, beforeBackdropY)) // Go up (front) Go forward (rear)
+//                                .lineToLinearHeading(new Pose2d(beforeBackdropX1 + 0.1, beforeBackdropY + 0.1, Math.toRadians(0.00))) // Rotate to 0
+//                                .lineTo(new Vector2d(beforeBackdropX2, beforeBackdropY)) // Go to center (rear)
+//                                .splineToConstantHeading(backdropPose, Math.toRadians(0.00)) // Go to backdrop
+//                                .waitSeconds(WAIT_BEFORE_RELEASE)
+//                                .waitSeconds(WAIT_AFTER_RELEASE)
+//                                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, backdropPose.getY())) // Go back
+//                                .waitSeconds(WAIT_FOR_RAISE)
+//                                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, parkIntermediateY)) // Strafe to the side
+//                                .lineToLinearHeading(new Pose2d(PARKING_INTERMEDIATE_X + 0.1, parkIntermediateY + 0.1, Math.toRadians(180.00))) // Rotate to 180
+//                                .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
+//                                .build()
+//                );
 
-        if (initialPosition() == InitialPosition.FRONT) {
-            startingX = TILE_SIZE / 2;
-        }
-        else if (initialPosition() == InitialPosition.REAR) {
-            startingX = -(TILE_SIZE * 1.53);
-        }
+        double yaw = -30;
+        double tagX = 59.17;
+        double tagY = 29.72;
+        double posX = tagX - 30;
+        double posY = tagY + -20;
 
-        if (alliance() == Alliance.BLUE) {
-            startingY = STAGE_SIZE - ROBOT_SIZE / 2;
-            startingRotation = Math.toRadians(270);
-        }
-        else if (alliance() == Alliance.RED) {
-            startingY = -STAGE_SIZE + ROBOT_SIZE / 2;
-            startingRotation = Math.toRadians(90);
-        }
-
-        Pose2d startPose = new Pose2d(startingX, startingY, startingRotation);
-
-        // Go to prop
-        double spikePosX = startPose.getX();
-        double spikePosY = startPose.getY();
-        double spikeRot = startPose.getHeading();
-
-        if (spikePosition == SpikePosition.CENTER) {
-            spikePosY = advanceToZero(spikePosY, SPIKE_CENTER_Y);
-        }
-        else if (spikePosition == SpikePosition.LEFT) {
-            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
-
-            if (alliance() == Alliance.BLUE) {
-                spikePosX += SPIKE_SIDE_X;
-                spikeRot = Math.toRadians(0);
-            }
-            else if (alliance() == Alliance.RED) {
-                spikePosX -= SPIKE_SIDE_X;
-                spikeRot = Math.toRadians(180);
-            }
-        }
-        else if (spikePosition == SpikePosition.RIGHT) {
-            spikePosY = advanceToZero(spikePosY, SPIKE_Y);
-
-            if (alliance() == Alliance.BLUE) {
-                spikePosX -= SPIKE_SIDE_X;
-                spikeRot = Math.toRadians(180);
-            }
-            else if (alliance() == Alliance.RED) {
-                spikePosX += SPIKE_SIDE_X;
-                spikeRot = Math.toRadians(0);
-            }
-        }
-
-        // Go to backdrop
-        double backdropPosY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);;
-        if (spikePosition == SpikePosition.LEFT) {
-            backdropPosY += BACKDROP_LEFT_OFFSET;
-        }
-        else if (spikePosition == SpikePosition.RIGHT) {
-            backdropPosY -= BACKDROP_RIGHT_OFFSET;
-        }
-
-        Vector2d backdropPose = new Vector2d(BACKDROP_POS_X, backdropPosY);
-
-        double spikeCenterX = startPose.getX();
-        double spikeCenterY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);
-
-        double rearIntermediateY = advanceToZero(getStageEdge(), TILE_SIZE * 2.7);
-
-        // Park
-        double parkIntermediateY = advanceToZero(getStageEdge(), parking() == Parking.NEAR ? NEAR_PARKING : FAR_PARKING);
-        double parkX = STAGE_SIZE - TILE_SIZE / 2;
-
-        double beforeBackdropY = initialPosition() == InitialPosition.FRONT ? advanceToZero(getStageEdge(), FRONT_DOWN) : rearIntermediateY;
-        double beforeBackdropX1;
-        if (spikePosition == SpikePosition.CENTER) {
-            beforeBackdropX1 = initialPosition() == InitialPosition.FRONT ? spikeCenterX + 0.1 : spikeCenterX - TILE_SIZE * 0.6; // + 0.1 for no EmptyPathSegmentException
+        if (yaw > 0) {
+            yaw = 360 - yaw;
         }
         else {
-            beforeBackdropX1 = spikeCenterX + 0.1;
+            yaw = -yaw;
         }
-        double beforeBackdropX2 = initialPosition() == InitialPosition.FRONT ? spikeCenterX + 0.1 : 0; // + 0.1 for no EmptyPathSegmentException
 
-        double finalSpikePosX = spikePosX;
-        double finalSpikePosY = spikePosY;
-        double finalSpikeRot = spikeRot;
+        double finalYaw = yaw;
         RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(26.74330378369762, 28.78180821614297, 3.211860967940206, 3.211860967940206, 21.77)
-                .setStartPose(startPose)
+                .setStartPose(new Pose2d(posX, posY, Math.toRadians(yaw)))
                 .followTrajectorySequence(drive ->
-                        drive.trajectorySequenceBuilder(startPose)
-                                .lineTo(new Vector2d(spikeCenterX, spikeCenterY)) // Go to spike center
-                                .lineTo(new Vector2d(finalSpikePosX, finalSpikePosY)) // Go to specific position on spike
-                                .lineToLinearHeading(new Pose2d(finalSpikePosX + 0.01, finalSpikePosY + 0.01, finalSpikeRot)) // Rotate to spike
-                                .back(BACK_UP) // Move back
-                                .waitSeconds(WAIT_BEFORE_BACKDROP)
-                                .lineTo(new Vector2d(beforeBackdropX1, finalSpikePosY)) // Nothing (front) Go towards back (rear)
-                                .lineTo(new Vector2d(beforeBackdropX1, beforeBackdropY)) // Go up (front) Go forward (rear)
-                                .lineToLinearHeading(new Pose2d(beforeBackdropX1 + 0.1, beforeBackdropY + 0.1, Math.toRadians(0.00))) // Rotate to 0
-                                .lineTo(new Vector2d(beforeBackdropX2, beforeBackdropY)) // Go to center (rear)
-                                .splineToConstantHeading(backdropPose, Math.toRadians(0.00)) // Go to backdrop
-                                .waitSeconds(WAIT_BEFORE_RELEASE)
-                                .waitSeconds(WAIT_AFTER_RELEASE)
-                                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, backdropPose.getY())) // Go back
-                                .waitSeconds(WAIT_FOR_RAISE)
-                                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, parkIntermediateY)) // Strafe to the side
-                                .lineToLinearHeading(new Pose2d(PARKING_INTERMEDIATE_X + 0.1, parkIntermediateY + 0.1, Math.toRadians(180.00))) // Rotate to 180
-                                .lineTo(new Vector2d(parkX, parkIntermediateY)) // Park
+                        drive.trajectorySequenceBuilder(new Pose2d(posX, posY, Math.toRadians(finalYaw)))
+                                .splineTo(new Vector2d(tagX - 10, tagY), Math.toRadians(0))
                                 .build()
                 );
 
