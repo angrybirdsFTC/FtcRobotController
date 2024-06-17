@@ -7,8 +7,10 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.teamcode.roadrunner.drive.SampleMecanumDrive;
 import java.util.List;
@@ -49,20 +51,35 @@ public class AprilTagNavigation {
     }
 
     public void SplineToAprilTag(int id, double stoppingDistance) {
+        Pose2d tag = GetAprilTagPose(id, stoppingDistance);
+
+        Trajectory trajectory = drive.trajectoryBuilder(drive.getPoseEstimate())
+                .splineTo(new Vector2d(tag.getX(), tag.getY()), tag.getHeading())
+                .build();
+
+        drive.followTrajectory(trajectory);
+    }
+
+    public Pose2d GetAprilTagPose(int id, double stoppingDistance) {
         AprilTagDetection detection = GetAprilTagDetection(id);
-        if (detection == null) return;
+
+        if (detection == null) {
+            VectorF fieldPosition = AprilTagGameDatabase.getCenterStageTagLibrary().lookupTag(id).fieldPosition;
+
+            return new Pose2d(fieldPosition.get(0) - stoppingDistance, fieldPosition.get(1), Math.toRadians(0));
+        }
 
         double tagX = detection.metadata.fieldPosition.get(0);
         double tagY = detection.metadata.fieldPosition.get(1);
         double posX = tagX - detection.ftcPose.y;
         double posY = tagY + detection.ftcPose.x;
 
-        Trajectory trajectory = drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(detection.ftcPose.yaw)))
-                .splineTo(new Vector2d(tagX - stoppingDistance, tagY), Math.toRadians(0))
-                .build();
+        Pose2d robotPose = new Pose2d(posX, posY, Math.toRadians(detection.ftcPose.yaw));
+        Pose2d spline = new Pose2d(tagX - stoppingDistance, tagY, Math.toRadians(0));
 
-        drive.setPoseEstimate(trajectory.start());
-        drive.followTrajectory(trajectory);
+        drive.setPoseEstimate(robotPose);
+
+        return spline;
     }
 
     /**

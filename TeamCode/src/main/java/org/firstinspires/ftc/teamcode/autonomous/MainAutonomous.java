@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -13,6 +12,8 @@ import org.firstinspires.ftc.teamcode.controller_movement.DetectProp;
 import org.firstinspires.ftc.teamcode.roadrunner.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.roadrunner.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.roadrunner.util.PoseStorage;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class MainAutonomous extends OpMode {
     final double TILE_SIZE = 23.4;
@@ -72,6 +73,7 @@ public abstract class MainAutonomous extends OpMode {
     Servo leftGrip;
     Servo rollerServo;
 
+    AprilTagNavigation aprilTagNavigation;
     SampleMecanumDrive drive;
     DetectProp detectProp;
     DetectProp.SpikePosition spikePosition;
@@ -131,16 +133,40 @@ public abstract class MainAutonomous extends OpMode {
         }
 
         // Go to backdrop
-        double backdropPosY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);;
-        if (spikePosition == DetectProp.SpikePosition.LEFT) {
-            backdropPosY += BACKDROP_LEFT_OFFSET;
-        }
-        else if (spikePosition == DetectProp.SpikePosition.RIGHT) {
-            backdropPosY -= BACKDROP_RIGHT_OFFSET;
+//        double backdropPosY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);;
+//        if (spikePosition == DetectProp.SpikePosition.LEFT) {
+//            backdropPosY += BACKDROP_LEFT_OFFSET;
+//        }
+//        else if (spikePosition == DetectProp.SpikePosition.RIGHT) {
+//            backdropPosY -= BACKDROP_RIGHT_OFFSET;
+//        }
+//
+//        Vector2d backdropPose = new Vector2d(BACKDROP_POS_X, backdropPosY);
+
+        // Calculate AprilTag ID
+        int tagId = 0;
+        switch (spikePosition) {
+            case LEFT:
+                tagId = 1;
+                break;
+            case CENTER:
+                tagId = 2;
+                break;
+            case RIGHT:
+                tagId = 3;
+                break;
         }
 
-        Vector2d backdropPose = new Vector2d(BACKDROP_POS_X, backdropPosY);
+        if (alliance() == Alliance.RED) tagId += 3;
 
+        int finalTagId = tagId;
+
+        double lookAtAprilTag = alliance() == Alliance.BLUE ? 45 : 315;
+
+        // Calculate AprilTag position
+        AtomicReference<Pose2d> aprilTagPose = null;
+
+        // Something?
         double spikeCenterX = startPose.getX();
         double spikeCenterY = advanceToZero(getStageEdge(), BACKDROP_CENTER_POS_Y);
 
@@ -187,7 +213,11 @@ public abstract class MainAutonomous extends OpMode {
                 .lineTo(new Vector2d(beforeBackdropX1, spikePosY)) // Nothing (front) Go towards back (rear)
                 .lineTo(new Vector2d(beforeBackdropX1, beforeBackdropY)) // Go up (front) Go forward (rear)
                 .lineToLinearHeading(new Pose2d(beforeBackdropX1 + 0.1, beforeBackdropY + 0.1, Math.toRadians(0.00))) // Rotate to 0
-                .lineTo(new Vector2d(beforeBackdropX2, beforeBackdropY)) // Go to center (rear)
+                //.lineTo(new Vector2d(beforeBackdropX2, beforeBackdropY)) // Go to center (rear)
+                .lineToLinearHeading(new Pose2d(beforeBackdropX2, beforeBackdropY, Math.toRadians(lookAtAprilTag))) // Go to center
+                .addTemporalMarker(() -> {
+                    aprilTagPose.set(aprilTagNavigation.GetAprilTagPose(finalTagId, 5));
+                })
                 .addTemporalMarker(() -> {
                     resetSequence();
                     armTarget = BACKDROP_ARM_TARGET;
@@ -204,7 +234,8 @@ public abstract class MainAutonomous extends OpMode {
                     leftGripTarget = ArmUtils.GRIP_CLOSED;
                     rightGripTarget = ArmUtils.GRIP_CLOSED;
                 }) // Extend arm
-                .splineToConstantHeading(backdropPose, Math.toRadians(0.00)) // Go to backdrop
+                //.splineToConstantHeading(backdropPose, Math.toRadians(0.00)) // Go to backdrop
+                .splineTo(new Vector2d(aprilTagPose.get().getX(), aprilTagPose.get().getY()), Math.toRadians(0)) // Go to apriltag
                 .addTemporalMarker(() -> {
                     resetSequence();
                     armTarget = ARM_SEQUENCE_TARGET;
@@ -231,7 +262,8 @@ public abstract class MainAutonomous extends OpMode {
                     leftGripTarget = ArmUtils.GRIP_OPEN;
                     rightGripTarget = ArmUtils.GRIP_OPEN;
                 }) // Close arm
-                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, backdropPose.getY())) // Go back
+                //.lineTo(new Vector2d(PARKING_INTERMEDIATE_X, backdropPose.getY())) // Go back
+                .lineTo(new Vector2d(PARKING_INTERMEDIATE_X, aprilTagPose.get().getY())) // Go back
                 .waitSeconds(WAIT_FOR_RAISE)
                 .addTemporalMarker(() -> {
                     resetSequence();
@@ -315,6 +347,7 @@ public abstract class MainAutonomous extends OpMode {
         // Initialize
         drive = new SampleMecanumDrive(hardwareMap);
         detectProp = new DetectProp(hardwareMap);
+        aprilTagNavigation = new AprilTagNavigation(hardwareMap, drive);
 
         armLift = hardwareMap.dcMotor.get("armLift");
         armExtend = hardwareMap.dcMotor.get("armExtend");
