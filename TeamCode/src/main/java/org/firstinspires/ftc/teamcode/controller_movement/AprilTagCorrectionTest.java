@@ -37,6 +37,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     double detectionYaw;
     double correctionX;
     double correctionY;
+    AprilTagDetection detection;
 
     double correctionAngle;
 
@@ -46,7 +47,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
      * The variable to store our instance of the vision portal.
      */
     private VisionPortal visionPortal;
-
+    SampleMecanumDrive drive;
     //MovementUtils movement = new MovementUtils(HardwareMap);
 
     //returns the correction
@@ -90,27 +91,46 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         movementUtils.drive.followTrajectory(t2);
     }
 
-    public void MoveWithSpline(double X, double Y, double angle, int tag_id,  MovementUtils movementUtils) {
-        double tagX = 2.5 * SQUARE_SIDE;
-        double tagY = SQUARE_SIDE * (1 + (4 - tag_id) * 0.25);
+    public void MoveWithSpline(double X, double Y, double yaw) {
+        double tagX = detection.metadata.fieldPosition.get(0);
+        double tagY = detection.metadata.fieldPosition.get(1);
         double posX = tagX - Y;
         double posY = tagY + X;
-        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(angle)))
-                .splineToConstantHeading(new Vector2d(tagX - 5, tagY), Math.toRadians(0))
+
+        if (yaw > 0) {
+            yaw = 360 - yaw;
+        }
+        else {
+            yaw = -yaw;
+        }
+
+        drive.setPoseEstimate(new Pose2d(posX, posY, Math.toRadians(yaw)));
+        Trajectory t3 = drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(yaw)))
+                .splineTo(new Vector2d(tagX - 10, tagY), Math.toRadians(0))
                 .build();
-        movementUtils.drive.followTrajectory(t3);
+        drive.followTrajectory(t3);
     }
-    public void MoveWithSpline2(double X, double Y, double angle,  MovementUtils movementUtils) {
+    public void MoveWithSpline2(double X, double Y, double yaw,  MovementUtils movementUtils) {
         double posX = - Y;
-        double posY = - X;
-        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(angle)))
+        double posY = X;
+        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(yaw)))
                 .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(0))
                 .build();
         movementUtils.drive.followTrajectory(t3);
     }
+//    public void MoveWithSpline3(MovementUtils movementUtils) {
+//        double robotX = detection.metadata.fieldPosition.get(0) - detection.ftcPose.y;
+//        double robotY = detection.metadata.fieldPosition.get(1) + detection.ftcPose.x;
+//        movementUtils.drive.setPoseEstimate(new Pose2d());
+//
+//        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d(robotX, robotY, Math.toRadians(yaw)))
+//                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(yaw))
+//                .build();
+//        movementUtils.drive.followTrajectory(t3);
+//    }
     @Override
     public void runOpMode() {
-        MovementUtils movementUtils = new MovementUtils(hardwareMap);
+        drive = new SampleMecanumDrive(hardwareMap);
 
         initAprilTag();
 
@@ -147,13 +167,13 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 }
 
                 if (gamepad1.right_bumper) {
-                    MoveWithCorrectionX(correctionX, movementUtils);
+                    //MoveWithCorrectionX(correctionX, movementUtils);
                 }
                 if (gamepad1.left_bumper) {
-                    MoveWithCorrectionY(correctionY, movementUtils);
+                    //MoveWithCorrectionY(correctionY, movementUtils);
                 }
                 if (gamepad1.guide) {
-                    MoveWithSpline(detectionX, detectionY, detectionYaw, TARGET_ID, movementUtils);
+                    MoveWithSpline(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw);
                 }
                 // Share the CPU.
                 sleep(20);
@@ -184,7 +204,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 // == CAMERA CALIBRATION ==
                 // If you do not manually specify calibration parameters, the SDK will attempt
                 // to load a predefined calibration for your camera.
-                .setLensIntrinsics(578.272, 578.272, 402.145, 221.506)
+                 .setLensIntrinsics(1413.91, 1413.91, 965.446, 529.378)
                 // ... these parameters are fx, fy, cx, cy.
 
                 .build();
@@ -256,12 +276,21 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("Angle correction: ", correctAngle(detection.ftcPose.roll, 0));
                 telemetry.addData("Strafe correction: ",correctDistanceX(detection.ftcPose.x, 0));
 
+                telemetry.addData("Raw pos x: ", detection.ftcPose.x);
+                telemetry.addData("Raw pos y: ", detection.ftcPose.y);
+                telemetry.addData("Raw pos z: ", detection.ftcPose.z);
+                telemetry.addData("april tag pos: ", detection.metadata.fieldPosition);
+                telemetry.addData("april tag rot: ", detection.ftcPose.yaw);
+                telemetry.addData("posx", detection.metadata.fieldPosition.get(0) - detection.ftcPose.y);
+                telemetry.addData("posy", detection.metadata.fieldPosition.get(1) + detection.ftcPose.x);
+
                 correctionAngle = correctAngle(detection.ftcPose.roll, 0);
                 detectionX = detection.ftcPose.x;
                 detectionY = detection.ftcPose.y;
                 detectionYaw = detection.ftcPose.yaw;
                 correctionX = correctDistanceX(detection.ftcPose.x, 0);
                 correctionY = correctDistanceY(detection.ftcPose.y, BACKDROP_SPACE_DISTANCE);
+                this.detection = detection;
             }
         }   // end for() loop
 
