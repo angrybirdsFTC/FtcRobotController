@@ -35,6 +35,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     double detectionX;
     double detectionY;
     double detectionYaw;
+    double detectionBearing;
     double correctionX;
     double correctionY;
     AprilTagDetection detection;
@@ -42,6 +43,9 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     double correctionAngle;
 
     double SQUARE_SIDE = 24;
+
+    final int CAMERA_WIDTH = 1920;
+    final int CAMERA_HEIGHT = 1080;
 
     /**
      * The variable to store our instance of the vision portal.
@@ -96,21 +100,14 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         double tagY = detection.metadata.fieldPosition.get(1);
         double posX = tagX - Y;
         double posY = tagY + X;
-
-        if (yaw > 0) {
-            yaw = 360 - yaw;
-        }
-        else {
-            yaw = -yaw;
-        }
-
-        drive.setPoseEstimate(new Pose2d(posX, posY, Math.toRadians(yaw)));
-        Trajectory t3 = drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(yaw)))
-                .splineTo(new Vector2d(tagX - 10, tagY), Math.toRadians(0))
+        Pose2d currPos = new Pose2d(posX, posY, Math.toRadians(-yaw));
+        drive.setPoseEstimate(currPos);
+        Trajectory t3 = drive.trajectoryBuilder(currPos)
+                .lineToSplineHeading(new Pose2d(tagX - 10, tagY, Math.toRadians(0)))
                 .build();
         drive.followTrajectory(t3);
     }
-    public void MoveWithSpline2(double X, double Y, double yaw,  MovementUtils movementUtils) {
+    public void MoveWithSpline2(double X, double Y, double yaw, MovementUtils movementUtils) {
         double posX = - Y;
         double posY = X;
         Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(yaw)))
@@ -229,7 +226,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         }
 
         // Choose a camera resolution. Not all cameras support all resolutions.
-        //builder.setCameraResolution(new Size(640, 480));
+        builder.setCameraResolution(new Size(CAMERA_WIDTH, CAMERA_HEIGHT));
 
         // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
         //builder.enableLiveView(true);
@@ -281,6 +278,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("Raw pos z: ", detection.ftcPose.z);
                 telemetry.addData("april tag pos: ", detection.metadata.fieldPosition);
                 telemetry.addData("april tag rot: ", detection.ftcPose.yaw);
+                telemetry.addData("april tag bearing: ", detection.ftcPose.bearing);
                 telemetry.addData("posx", detection.metadata.fieldPosition.get(0) - detection.ftcPose.y);
                 telemetry.addData("posy", detection.metadata.fieldPosition.get(1) + detection.ftcPose.x);
 
@@ -288,6 +286,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 detectionX = detection.ftcPose.x;
                 detectionY = detection.ftcPose.y;
                 detectionYaw = detection.ftcPose.yaw;
+                detectionBearing = detection.ftcPose.bearing;
                 correctionX = correctDistanceX(detection.ftcPose.x, 0);
                 correctionY = correctDistanceY(detection.ftcPose.y, BACKDROP_SPACE_DISTANCE);
                 this.detection = detection;
