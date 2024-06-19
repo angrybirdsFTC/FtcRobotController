@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.controller_movement;
 
 import android.annotation.SuppressLint;
+import android.icu.util.ICUUncheckedIOException;
 import android.util.Size;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
@@ -9,6 +10,8 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.apache.commons.math3.analysis.integration.BaseAbstractUnivariateIntegrator;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -17,6 +20,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.teamcode.roadrunner.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.roadrunner.drive.SampleMecanumDrive;
 import java.util.List;
+import java.math.*;
 
 @TeleOp(name="AprilTagCorrectionTest", group = "SA_FTC")
 public class AprilTagCorrectionTest extends LinearOpMode {
@@ -32,6 +36,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     int TARGET_ID = 3;
     final double BACKDROP_SPACE_DISTANCE = 10;
 
+    final double CAMERA_TO_MIDDLE = 10;
     double detectionX;
     double detectionY;
     double detectionYaw;
@@ -95,18 +100,62 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         movementUtils.drive.followTrajectory(t2);
     }
 
-    public void MoveWithSpline(double X, double Y, double yaw) {
+    public Pose2d calculatePose(double X, double Y, double bearing, double yaw) {
         double tagX = detection.metadata.fieldPosition.get(0);
         double tagY = detection.metadata.fieldPosition.get(1);
-        double posX = tagX - Y;
-        double posY = tagY + X;
+
+        double camera_posX = tagX - Y;
+        double camera_posY = tagY + X;
+        double rad;
+        if (yaw < 0) {
+            rad = Math.toRadians(- yaw - 90);
+        }
+        else
+            rad = Math.toRadians(90 - yaw);
+        double posX =  camera_posX - Math.sin(rad) * CAMERA_TO_MIDDLE;
+        double posY =  camera_posY + Math.cos(rad) * CAMERA_TO_MIDDLE;
         Pose2d currPos = new Pose2d(posX, posY, Math.toRadians(-yaw));
+
+        return currPos;
+
+    }
+
+    public void MoveWithSpline(double X, double Y, double bearing, double yaw) {
+        double tagX = detection.metadata.fieldPosition.get(0);
+        double tagY = detection.metadata.fieldPosition.get(1);
+
+        Pose2d currPos = calculatePose(X, Y, bearing, yaw);
+
+        drive.setPoseEstimate(currPos);
+        Trajectory t3 = drive.trajectoryBuilder(currPos)
+                .splineToLinearHeading(new Pose2d(tagX - 30, tagY , Math.toRadians(0)), Math.toRadians(0))
+                .build();
+        drive.followTrajectory(t3);
+    }
+
+    public void trigoSpline(double X, double Y, double detectionYaw, double detectionBearing, double detectionRange) {
+        double tagX = detection.metadata.fieldPosition.get(0);
+        double tagY = detection.metadata.fieldPosition.get(1);
+
+        detectionYaw = Math.abs(detectionYaw);
+        detectionBearing = Math.abs(detectionBearing);
+        double alpha = 90 - detectionBearing;
+        double beta = 90 - detectionYaw - alpha;
+        double botX = detectionRange * Math.cos(beta);
+        double botY = detectionRange * Math.sin(beta);
+
+        double absBotX = tagX - botX;
+        double absBotY = tagY - botY;
+
+        Pose2d currPos = new Pose2d(absBotX, absBotY, Math.toRadians(-detectionYaw));
+
         drive.setPoseEstimate(currPos);
         Trajectory t3 = drive.trajectoryBuilder(currPos)
                 .lineToSplineHeading(new Pose2d(tagX - 10, tagY, Math.toRadians(0)))
                 .build();
         drive.followTrajectory(t3);
     }
+
     public void MoveWithSpline2(double X, double Y, double yaw, MovementUtils movementUtils) {
         double posX = - Y;
         double posY = X;
@@ -170,7 +219,8 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                     //MoveWithCorrectionY(correctionY, movementUtils);
                 }
                 if (gamepad1.guide) {
-                    MoveWithSpline(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw);
+                    MoveWithSpline(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.bearing, detection.ftcPose.yaw);
+                    //trigoSpline(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw, detectionBearing, detection.ftcPose.range);
                 }
                 // Share the CPU.
                 sleep(20);
@@ -279,8 +329,10 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("april tag pos: ", detection.metadata.fieldPosition);
                 telemetry.addData("april tag rot: ", detection.ftcPose.yaw);
                 telemetry.addData("april tag bearing: ", detection.ftcPose.bearing);
-                telemetry.addData("posx", detection.metadata.fieldPosition.get(0) - detection.ftcPose.y);
-                telemetry.addData("posy", detection.metadata.fieldPosition.get(1) + detection.ftcPose.x);
+                telemetry.addData("posx camera", detection.metadata.fieldPosition.get(0) - detection.ftcPose.y);
+                telemetry.addData("posy camera", detection.metadata.fieldPosition.get(1) + detection.ftcPose.x);
+                telemetry.addData("robot center: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.bearing, detection.ftcPose.yaw));
+
 
                 correctionAngle = correctAngle(detection.ftcPose.roll, 0);
                 detectionX = detection.ftcPose.x;
@@ -290,6 +342,24 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 correctionX = correctDistanceX(detection.ftcPose.x, 0);
                 correctionY = correctDistanceY(detection.ftcPose.y, BACKDROP_SPACE_DISTANCE);
                 this.detection = detection;
+
+                double tagX = detection.metadata.fieldPosition.get(0);
+                double tagY = detection.metadata.fieldPosition.get(1);
+
+                detectionYaw = Math.abs(detectionYaw);
+                detectionBearing = Math.abs(detectionBearing);
+                double alpha = 90 - detectionBearing;
+                double beta = 90 - detectionYaw - alpha;
+                double botX = detection.ftcPose.range * Math.cos(beta);
+                double botY = detection.ftcPose.range * Math.sin(beta);
+
+                double absBotX = tagX - botX;
+                double absBotY = tagY - botY;
+
+                Pose2d currPos = new Pose2d(absBotX, absBotY, Math.toRadians(-detectionYaw));
+
+                telemetry.addData("robot pose", currPos);
+                telemetry.addData("tag pose", tagX + "," + tagY);
             }
         }   // end for() loop
 

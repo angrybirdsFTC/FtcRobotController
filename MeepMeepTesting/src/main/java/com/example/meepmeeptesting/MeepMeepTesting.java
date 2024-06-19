@@ -210,27 +210,19 @@ public class MeepMeepTesting {
 //                                .build()
 //                );
 
-        double yaw = -30;
-        double tagX = 59.17;
-        double tagY = 29.72;
-        double posX = tagX - 30;
-        double posY = tagY + -20;
+        double tagX = 60.25;
+        double tagY = 29.4;
+        double posX = 33.8;
+        double posY = 35.04;
 
-        if (yaw > 0) {
-            yaw = 360 - yaw;
-        }
-        else {
-            yaw = -yaw;
-        }
-
-        double finalYaw = yaw;
+        double finalYaw = 11;
         RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(26.74330378369762, 28.78180821614297, 3.211860967940206, 3.211860967940206, 21.77)
-                .setStartPose(new Pose2d(posX, posY, Math.toRadians(yaw)))
+                .setStartPose(new Pose2d(posX, posY, Math.toRadians(finalYaw)))
                 .followTrajectorySequence(drive ->
                         drive.trajectorySequenceBuilder(new Pose2d(posX, posY, Math.toRadians(finalYaw)))
-                                .splineTo(new Vector2d(tagX - 10, tagY), Math.toRadians(0))
+                                .lineToSplineHeading(new Pose2d(tagX - 10, tagY, Math.toRadians(0)))
                                 .build()
                 );
 
