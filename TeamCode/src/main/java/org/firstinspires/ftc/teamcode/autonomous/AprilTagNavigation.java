@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+import org.firstinspires.ftc.teamcode.controller_movement.MovementUtils;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
@@ -48,6 +49,15 @@ public class AprilTagNavigation {
         }
 
         return null;
+    }
+
+    public Vector2d MoveWithCorrection(int id) {
+        AprilTagDetection detection = GetAprilTagDetection(id);
+
+        double x = drive.getPoseEstimate().getX() - detection.ftcPose.y;
+        double y = drive.getPoseEstimate().getY() + detection.ftcPose.x;
+
+        return new Vector2d(x, y);
     }
 
     public void SplineToAprilTag(int id, double stoppingDistance) {
