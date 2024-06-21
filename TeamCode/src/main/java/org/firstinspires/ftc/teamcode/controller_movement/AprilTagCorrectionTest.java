@@ -100,20 +100,15 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         movementUtils.drive.followTrajectory(t2);
     }
 
-    public Pose2d calculatePose(double X, double Y, double bearing, double yaw) {
+    public Pose2d calculatePose(double X, double Y, double yaw) {
         double tagX = detection.metadata.fieldPosition.get(0);
         double tagY = detection.metadata.fieldPosition.get(1);
 
         double camera_posX = tagX - Y;
         double camera_posY = tagY + X;
-        double rad;
-        if (yaw < 0) {
-            rad = Math.toRadians(- yaw - 90);
-        }
-        else
-            rad = Math.toRadians(90 - yaw);
-        double posX =  camera_posX - Math.sin(rad) * CAMERA_TO_MIDDLE;
-        double posY =  camera_posY + Math.cos(rad) * CAMERA_TO_MIDDLE;
+
+        double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(Math.toRadians(yaw));
+        double posY = camera_posY + CAMERA_TO_MIDDLE * Math.sin(Math.toRadians(yaw));
         Pose2d currPos = new Pose2d(posX, posY, Math.toRadians(-yaw));
 
         return currPos;
@@ -124,7 +119,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         double tagX = detection.metadata.fieldPosition.get(0);
         double tagY = detection.metadata.fieldPosition.get(1);
 
-        Pose2d currPos = calculatePose(X, Y, bearing, yaw);
+        Pose2d currPos = calculatePose(X, Y, yaw);
 
         drive.setPoseEstimate(currPos);
         Trajectory t3 = drive.trajectoryBuilder(currPos)
@@ -331,7 +326,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("april tag bearing: ", detection.ftcPose.bearing);
                 telemetry.addData("posx camera", detection.metadata.fieldPosition.get(0) - detection.ftcPose.y);
                 telemetry.addData("posy camera", detection.metadata.fieldPosition.get(1) + detection.ftcPose.x);
-                telemetry.addData("robot center: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.bearing, detection.ftcPose.yaw));
+                telemetry.addData("robot center: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw));
 
 
                 correctionAngle = correctAngle(detection.ftcPose.roll, 0);
