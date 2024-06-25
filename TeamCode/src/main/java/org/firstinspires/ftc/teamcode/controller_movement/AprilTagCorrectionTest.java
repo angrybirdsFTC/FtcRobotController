@@ -36,7 +36,8 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     int TARGET_ID = 3;
     final double BACKDROP_SPACE_DISTANCE = 10;
 
-    final double CAMERA_TO_MIDDLE = 10;
+    final double CAMERA_TO_MIDDLE = 4.13; // in
+    final double MIDDLE_TO_HUB = 1.96; // in
     double detectionX;
     double detectionY;
     double detectionYaw;
@@ -107,8 +108,10 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         double camera_posX = tagX - Y;
         double camera_posY = tagY + X;
 
-        double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(Math.toRadians(yaw));
-        double posY = camera_posY + CAMERA_TO_MIDDLE * Math.sin(Math.toRadians(yaw));
+        double yaw_to_rad = Math.toRadians(yaw);
+
+        double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(yaw_to_rad); // - MIDDLE_TO_HUB * Math.sin(yaw_to_rad);
+        double posY = camera_posY + CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad); // - MIDDLE_TO_HUB * Math.cos(yaw_to_rad);
         Pose2d currPos = new Pose2d(posX, posY, Math.toRadians(-yaw));
 
         return currPos;
@@ -326,7 +329,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("april tag bearing: ", detection.ftcPose.bearing);
                 telemetry.addData("posx camera", detection.metadata.fieldPosition.get(0) - detection.ftcPose.y);
                 telemetry.addData("posy camera", detection.metadata.fieldPosition.get(1) + detection.ftcPose.x);
-                telemetry.addData("robot center: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw));
+                //telemetry.addData("robot center: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw));
 
 
                 correctionAngle = correctAngle(detection.ftcPose.roll, 0);
