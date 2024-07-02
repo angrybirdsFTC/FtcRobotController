@@ -36,8 +36,8 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     int TARGET_ID = 3;
     final double BACKDROP_SPACE_DISTANCE = 10;
 
-    final double CAMERA_TO_MIDDLE = 4.13; // in
-    final double MIDDLE_TO_HUB = 1.96; // in
+    final double CAMERA_TO_MIDDLE = 3; // in
+    // final double MIDDLE_TO_HUB = 1.96; // in
     double detectionX;
     double detectionY;
     double detectionYaw;
@@ -47,8 +47,6 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     AprilTagDetection detection;
 
     double correctionAngle;
-
-    double SQUARE_SIDE = 24;
 
     final int CAMERA_WIDTH = 1920;
     final int CAMERA_HEIGHT = 1080;
@@ -102,20 +100,24 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     }
 
     public Pose2d calculatePose(double X, double Y, double yaw) {
-        double tagX = detection.metadata.fieldPosition.get(0);
-        double tagY = detection.metadata.fieldPosition.get(1);
+        double tagX = this.detection.metadata.fieldPosition.get(0);
+        double tagY = this.detection.metadata.fieldPosition.get(1);
 
         double camera_posX = tagX - Y;
-        double camera_posY = tagY + X;
+        double camera_posY = tagY - X;
 
         double yaw_to_rad = Math.toRadians(yaw);
 
-        double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(yaw_to_rad); // - MIDDLE_TO_HUB * Math.sin(yaw_to_rad);
-        double posY = camera_posY + CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad); // - MIDDLE_TO_HUB * Math.cos(yaw_to_rad);
+        double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(yaw_to_rad);
+        double posY = camera_posY - CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
         Pose2d currPos = new Pose2d(posX, posY, Math.toRadians(-yaw));
 
         return currPos;
 
+    }
+
+    public void turnalittlebittotheright() {
+        drive.turn(Math.toRadians(5));
     }
 
     public void MoveWithSpline(double X, double Y, double bearing, double yaw) {
@@ -214,7 +216,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                     //MoveWithCorrectionX(correctionX, movementUtils);
                 }
                 if (gamepad1.left_bumper) {
-                    //MoveWithCorrectionY(correctionY, movementUtils);
+                    turnalittlebittotheright();
                 }
                 if (gamepad1.guide) {
                     MoveWithSpline(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.bearing, detection.ftcPose.yaw);
@@ -311,6 +313,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         // Step through the list of detections and display info for each one.
         for (AprilTagDetection detection : currentDetections) {
             if (detection.id == target_id) {
+                this.detection = detection;
                 telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
                 telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
                 telemetry.addLine("Distance from AprilTag: " + detection.ftcPose.y);
@@ -329,7 +332,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("april tag bearing: ", detection.ftcPose.bearing);
                 telemetry.addData("posx camera", detection.metadata.fieldPosition.get(0) - detection.ftcPose.y);
                 telemetry.addData("posy camera", detection.metadata.fieldPosition.get(1) + detection.ftcPose.x);
-                //telemetry.addData("robot center: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw));
+                telemetry.addData("robot center: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw));
 
 
                 correctionAngle = correctAngle(detection.ftcPose.roll, 0);
