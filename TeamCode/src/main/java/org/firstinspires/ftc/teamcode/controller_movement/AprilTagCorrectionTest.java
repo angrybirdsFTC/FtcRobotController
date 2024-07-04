@@ -58,47 +58,6 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     SampleMecanumDrive drive;
     //MovementUtils movement = new MovementUtils(HardwareMap);
 
-    //returns the correction
-    public double correctDistanceY(double yDistance, double TargetY) {
-        double correction = yDistance - TargetY;
-        return Math.abs(correction);
-    }
-
-    // This is used for the Strafe movement only
-    public double correctDistanceX(double xDistance, double TargetX) {
-        return xDistance - TargetX;
-    }
-
-    // returns the correction regarding the robot's angle
-    public double correctAngle(double AprilTagAngle, double TargetAngle) {
-        return AprilTagAngle - TargetAngle;
-    }
-
-    public void MoveWithCorrectionY(double correction, MovementUtils movementUtils) {
-        Trajectory t1 =  movementUtils.drive.trajectoryBuilder(new Pose2d())
-                .forward(correction)
-                .build();
-        movementUtils.drive.followTrajectory(t1);
-    }
-
-    public void MoveWithCorrectionX(double correction, MovementUtils movementUtils) {
-        Trajectory t2;
-
-        if (correction < 0) {
-            t2 = movementUtils.drive.trajectoryBuilder(new Pose2d())
-                    .strafeRight(Math.abs(correction))
-                    .build();
-        }
-
-        else {
-            t2 = movementUtils.drive.trajectoryBuilder(new Pose2d())
-                    .strafeLeft(Math.abs(correction))
-                    .build();
-        }
-
-        movementUtils.drive.followTrajectory(t2);
-    }
-
     public Pose2d calculatePose(double X, double Y, double yaw) {
         double tagX = this.detection.metadata.fieldPosition.get(0);
         double tagY = this.detection.metadata.fieldPosition.get(1);
@@ -109,15 +68,11 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         double yaw_to_rad = Math.toRadians(yaw);
 
         double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(yaw_to_rad);
-        double posY = camera_posY - CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
+        double posY = camera_posY + CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
         Pose2d currPos = new Pose2d(posX, posY, Math.toRadians(-yaw));
 
         return currPos;
 
-    }
-
-    public void turnalittlebittotheright() {
-        drive.turn(Math.toRadians(5));
     }
 
     public void MoveWithSpline(double X, double Y, double bearing, double yaw) {
@@ -133,47 +88,6 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         drive.followTrajectory(t3);
     }
 
-    public void trigoSpline(double X, double Y, double detectionYaw, double detectionBearing, double detectionRange) {
-        double tagX = detection.metadata.fieldPosition.get(0);
-        double tagY = detection.metadata.fieldPosition.get(1);
-
-        detectionYaw = Math.abs(detectionYaw);
-        detectionBearing = Math.abs(detectionBearing);
-        double alpha = 90 - detectionBearing;
-        double beta = 90 - detectionYaw - alpha;
-        double botX = detectionRange * Math.cos(beta);
-        double botY = detectionRange * Math.sin(beta);
-
-        double absBotX = tagX - botX;
-        double absBotY = tagY - botY;
-
-        Pose2d currPos = new Pose2d(absBotX, absBotY, Math.toRadians(-detectionYaw));
-
-        drive.setPoseEstimate(currPos);
-        Trajectory t3 = drive.trajectoryBuilder(currPos)
-                .lineToSplineHeading(new Pose2d(tagX - 10, tagY, Math.toRadians(0)))
-                .build();
-        drive.followTrajectory(t3);
-    }
-
-    public void MoveWithSpline2(double X, double Y, double yaw, MovementUtils movementUtils) {
-        double posX = - Y;
-        double posY = X;
-        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d(posX, posY, Math.toRadians(yaw)))
-                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(0))
-                .build();
-        movementUtils.drive.followTrajectory(t3);
-    }
-//    public void MoveWithSpline3(MovementUtils movementUtils) {
-//        double robotX = detection.metadata.fieldPosition.get(0) - detection.ftcPose.y;
-//        double robotY = detection.metadata.fieldPosition.get(1) + detection.ftcPose.x;
-//        movementUtils.drive.setPoseEstimate(new Pose2d());
-//
-//        Trajectory t3 = movementUtils.drive.trajectoryBuilder(new Pose2d(robotX, robotY, Math.toRadians(yaw)))
-//                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(yaw))
-//                .build();
-//        movementUtils.drive.followTrajectory(t3);
-//    }
     @Override
     public void runOpMode() {
         drive = new SampleMecanumDrive(hardwareMap);
@@ -213,14 +127,13 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 }
 
                 if (gamepad1.right_bumper) {
-                    //MoveWithCorrectionX(correctionX, movementUtils);
+                    // does nothing
                 }
                 if (gamepad1.left_bumper) {
-                    turnalittlebittotheright();
+                    // does nothing
                 }
                 if (gamepad1.guide) {
                     MoveWithSpline(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.bearing, detection.ftcPose.yaw);
-                    //trigoSpline(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw, detectionBearing, detection.ftcPose.range);
                 }
                 // Share the CPU.
                 sleep(20);
@@ -320,10 +233,6 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
                 telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
 
-                telemetry.addData("Forward correction: ", correctDistanceY(detection.ftcPose.y, BACKDROP_SPACE_DISTANCE));
-                telemetry.addData("Angle correction: ", correctAngle(detection.ftcPose.roll, 0));
-                telemetry.addData("Strafe correction: ",correctDistanceX(detection.ftcPose.x, 0));
-
                 telemetry.addData("Raw pos x: ", detection.ftcPose.x);
                 telemetry.addData("Raw pos y: ", detection.ftcPose.y);
                 telemetry.addData("Raw pos z: ", detection.ftcPose.z);
@@ -331,18 +240,13 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("april tag rot: ", detection.ftcPose.yaw);
                 telemetry.addData("april tag bearing: ", detection.ftcPose.bearing);
                 telemetry.addData("posx camera", detection.metadata.fieldPosition.get(0) - detection.ftcPose.y);
-                telemetry.addData("posy camera", detection.metadata.fieldPosition.get(1) + detection.ftcPose.x);
+                telemetry.addData("posy camera", detection.metadata.fieldPosition.get(1) - detection.ftcPose.x);
                 telemetry.addData("robot center: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw));
 
-
-                correctionAngle = correctAngle(detection.ftcPose.roll, 0);
                 detectionX = detection.ftcPose.x;
                 detectionY = detection.ftcPose.y;
                 detectionYaw = detection.ftcPose.yaw;
                 detectionBearing = detection.ftcPose.bearing;
-                correctionX = correctDistanceX(detection.ftcPose.x, 0);
-                correctionY = correctDistanceY(detection.ftcPose.y, BACKDROP_SPACE_DISTANCE);
-                this.detection = detection;
 
                 double tagX = detection.metadata.fieldPosition.get(0);
                 double tagY = detection.metadata.fieldPosition.get(1);
@@ -363,10 +267,5 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("tag pose", tagX + "," + tagY);
             }
         }   // end for() loop
-
-        // Add "key" information to telemetry
-        //telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
-        //telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
-        //telemetry.addLine("RBE = Range, Bearing & Elevation");
     }
 }
