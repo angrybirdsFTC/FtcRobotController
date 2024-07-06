@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.apache.commons.math3.analysis.integration.BaseAbstractUnivariateIntegrator;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.opencv.ApriltagProcessorRects;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -149,7 +150,6 @@ public class AprilTagCorrectionTest extends LinearOpMode {
      * Initialize the AprilTag processor.
      */
     private void initAprilTag() {
-
         // Create the AprilTag processor.
         aprilTag = new AprilTagProcessor.Builder()
 
@@ -204,6 +204,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
 
         // Set and enable git the processor.
         builder.addProcessor(aprilTag);
+
 
         // Build the Vision Portal, using the above settings.
         visionPortal = builder.build();
