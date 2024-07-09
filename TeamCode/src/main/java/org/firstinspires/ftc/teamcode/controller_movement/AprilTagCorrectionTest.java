@@ -14,7 +14,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.apache.commons.math3.analysis.integration.BaseAbstractUnivariateIntegrator;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+import org.firstinspires.ftc.robotcore.external.navigation.Quaternion;
 import org.firstinspires.ftc.teamcode.opencv.ApriltagProcessorRects;
+import org.firstinspires.ftc.teamcode.utils.Transform3D;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -37,8 +40,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     int TARGET_ID = 3;
     final double BACKDROP_SPACE_DISTANCE = 10;
 
-    final double CAMERA_TO_MIDDLE = 3; // in
-    // final double MIDDLE_TO_HUB = 1.96; // in
+    final double CAMERA_TO_MIDDLE = 10.6; // in
     double detectionX;
     double detectionY;
     double detectionYaw;
@@ -59,34 +61,110 @@ public class AprilTagCorrectionTest extends LinearOpMode {
     SampleMecanumDrive drive;
     //MovementUtils movement = new MovementUtils(HardwareMap);
 
-    public Pose2d calculatePose(double X, double Y, double yaw) {
+
+    public Pose2d calculatePose(double X, double Y, double yaw, double bearing, double range) {
         double tagX = this.detection.metadata.fieldPosition.get(0);
         double tagY = this.detection.metadata.fieldPosition.get(1);
 
-        double camera_posX = tagX - Y;
-        double camera_posY = tagY - X;
+        double theta = Math.toRadians(bearing - yaw);
+
+        double camera_posX = tagX - range * Math.cos(theta);
+        double camera_posY = tagY - range * Math.sin(theta);
 
         double yaw_to_rad = Math.toRadians(yaw);
 
+        double posY = camera_posY - CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
         double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(yaw_to_rad);
-        double posY = camera_posY + CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
+
+        return new Pose2d(camera_posX, camera_posY, Math.toRadians(-yaw));
+    }
+
+    public Pose2d calculateCameraPose(double X, double Y, double yaw, double bearing, double range) {
+        double tagX = this.detection.metadata.fieldPosition.get(0);
+        double tagY = this.detection.metadata.fieldPosition.get(1);
+
+        double theta = Math.toRadians(bearing - yaw);
+
+        double camera_posX = tagX - range * Math.cos(theta);
+        double camera_posY = tagY - range * Math.sin(theta);
+
+        return new Pose2d(camera_posX, camera_posY, Math.toRadians(-yaw));
+    }
+
+    public Pose2d calculatePose2(double X, double Y, double yaw) {
+        double tagX = this.detection.metadata.fieldPosition.get(0);
+        double tagY = this.detection.metadata.fieldPosition.get(1);
+
+        double camera_posX = tagX + Y;
+        double camera_posY = tagY - X;
+
+        double yaw_to_rad = Math.toRadians(yaw);
+        double posY = camera_posY - CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
+        double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(yaw_to_rad);
         Pose2d currPos = new Pose2d(posX, posY, Math.toRadians(-yaw));
 
         return currPos;
 
+//        AprilTagDetection tag = this.detection;
+//
+//        // Get the tag absolute position on the field
+//        Transform3D tagPose = new Transform3D(
+//                tag.metadata.fieldPosition,
+//                tag.metadata.fieldOrientation
+//        );
+//
+//        // Get the relative location of the tag from the camera
+//        Transform3D cameraToTagTransform = new Transform3D(
+//                new VectorF(
+//                        (float) tag.rawPose.x,
+//                        (float) tag.rawPose.y,
+//                        (float) tag.rawPose.z
+//                ),
+//                Transform3D.MatrixToQuaternion(tag.rawPose.R)
+//        );
+//
+//        // Inverse the previous transform to get the location of the camera from the tag
+//        Transform3D tagToCameraTransform = cameraToTagTransform.unaryMinusInverse();
+//
+//        // Add the tag position and the relative position of the camera to the tag
+//        Transform3D cameraPose = tagPose.plus(tagToCameraTransform);
+//
+//        // The the relative location of the camera to the robot
+//        //TODO: You have to tune this value for your camera
+//        Transform3D robotToCameraTransform = new Transform3D(
+//                new VectorF(
+//                        0f,
+//                        10.5f,
+//                        6f
+//                ),
+//                new Quaternion(0,0,1f,0, System.nanoTime())
+//        );
+//
+//        // Inverse the previous transform again to get the location of the robot from the camera
+//        Transform3D cameraToRobotTransform = robotToCameraTransform.unaryMinusInverse();
+//
+//        // Add the relative location of the robot to location of the Camera
+//        Transform3D robotPose = cameraPose.plus(cameraToRobotTransform);
+//
+//        // Convert from a 3D transform to a 2D pose
+//        return robotPose.toPose2d();
     }
 
-    public void MoveWithSpline(double X, double Y, double bearing, double yaw) {
+    public void MoveWithSpline(double X, double Y, double bearing, double yaw, double range) {
         double tagX = detection.metadata.fieldPosition.get(0);
         double tagY = detection.metadata.fieldPosition.get(1);
 
-        Pose2d currPos = calculatePose(X, Y, yaw);
+        Pose2d currPos = calculatePose(X, Y, yaw, bearing, range);
 
         drive.setPoseEstimate(currPos);
         Trajectory t3 = drive.trajectoryBuilder(currPos)
-                .splineToLinearHeading(new Pose2d(tagX - 30, tagY , Math.toRadians(0)), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(tagX - 10, tagY , Math.toRadians(0)), Math.toRadians(0))
                 .build();
         drive.followTrajectory(t3);
+    }
+
+    public void turnalittlebittotheright() {
+        drive.turn(Math.toRadians(5));
     }
 
     @Override
@@ -105,7 +183,6 @@ public class AprilTagCorrectionTest extends LinearOpMode {
             while (opModeIsActive()) {
 
                 telemetryAprilTag(TARGET_ID);
-
                 // Push telemetry to the Driver Station.
                 telemetry.addData("Target ID: ", TARGET_ID);
                 telemetry.update();
@@ -131,10 +208,10 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                     // does nothing
                 }
                 if (gamepad1.left_bumper) {
-                    // does nothing
+                   turnalittlebittotheright();
                 }
                 if (gamepad1.guide) {
-                    MoveWithSpline(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.bearing, detection.ftcPose.yaw);
+                    MoveWithSpline(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.bearing, detection.ftcPose.yaw, detection.ftcPose.range);
                 }
                 // Share the CPU.
                 sleep(20);
@@ -234,6 +311,7 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
                 telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
 
+                this.detectionX = detection.ftcPose.x;
                 telemetry.addData("Raw pos x: ", detection.ftcPose.x);
                 telemetry.addData("Raw pos y: ", detection.ftcPose.y);
                 telemetry.addData("Raw pos z: ", detection.ftcPose.z);
@@ -241,31 +319,9 @@ public class AprilTagCorrectionTest extends LinearOpMode {
                 telemetry.addData("april tag rot: ", detection.ftcPose.yaw);
                 telemetry.addData("april tag bearing: ", detection.ftcPose.bearing);
                 telemetry.addData("posx camera", detection.metadata.fieldPosition.get(0) - detection.ftcPose.y);
-                telemetry.addData("posy camera", detection.metadata.fieldPosition.get(1) - detection.ftcPose.x);
-                telemetry.addData("robot center: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw));
-
-                detectionX = detection.ftcPose.x;
-                detectionY = detection.ftcPose.y;
-                detectionYaw = detection.ftcPose.yaw;
-                detectionBearing = detection.ftcPose.bearing;
-
-                double tagX = detection.metadata.fieldPosition.get(0);
-                double tagY = detection.metadata.fieldPosition.get(1);
-
-                detectionYaw = Math.abs(detectionYaw);
-                detectionBearing = Math.abs(detectionBearing);
-                double alpha = 90 - detectionBearing;
-                double beta = 90 - detectionYaw - alpha;
-                double botX = detection.ftcPose.range * Math.cos(beta);
-                double botY = detection.ftcPose.range * Math.sin(beta);
-
-                double absBotX = tagX - botX;
-                double absBotY = tagY - botY;
-
-                Pose2d currPos = new Pose2d(absBotX, absBotY, Math.toRadians(-detectionYaw));
-
-                telemetry.addData("robot pose", currPos);
-                telemetry.addData("tag pose", tagX + "," + tagY);
+                telemetry.addData("posy camera", detection.metadata.fieldPosition.get(1) + detection.ftcPose.x);
+                telemetry.addData("fcb american patriots: ", calculatePose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw, detection.ftcPose.bearing, detection.ftcPose.range));
+                telemetry.addData("camera pose: ", calculateCameraPose(detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw, detection.ftcPose.bearing, detection.ftcPose.range));
             }
         }   // end for() loop
     }
