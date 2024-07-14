@@ -73,10 +73,10 @@ public class AprilTagCorrectionTest extends LinearOpMode {
 
         double yaw_to_rad = Math.toRadians(yaw);
 
-        double posY = camera_posY - CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
+        double posY = camera_posY + CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
         double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(yaw_to_rad);
 
-        return new Pose2d(camera_posX, camera_posY, Math.toRadians(-yaw));
+        return new Pose2d(posX, posY, Math.toRadians(-yaw));
     }
 
     public Pose2d calculateCameraPose(double X, double Y, double yaw, double bearing, double range) {
