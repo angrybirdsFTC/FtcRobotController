@@ -73,8 +73,8 @@ public class AprilTagCorrectionTest extends LinearOpMode {
 
         double yaw_to_rad = Math.toRadians(yaw);
 
-        double posY = camera_posY + CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
         double posX = camera_posX - CAMERA_TO_MIDDLE * Math.cos(yaw_to_rad);
+        double posY = camera_posY + CAMERA_TO_MIDDLE * Math.sin(yaw_to_rad);
 
         return new Pose2d(posX, posY, Math.toRadians(-yaw));
     }
@@ -89,6 +89,19 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         double camera_posY = tagY - range * Math.sin(theta);
 
         return new Pose2d(camera_posX, camera_posY, Math.toRadians(-yaw));
+    }
+
+    public Pose2d calculatePoseHopefully(double X, double Y, double yaw, double tagX, double tagY) {
+        Y -= CAMERA_TO_MIDDLE;
+        double theta = Math.toRadians(-yaw);
+
+       double relativeX = X * Math.cos(theta) + Y * Math.sin(theta);
+       double relativeY = Y * Math.cos(theta) - X * Math.sin(theta);
+
+       double robotX = tagX - relativeX;
+       double robotY = tagY - relativeY;
+
+       return new Pose2d(robotX, robotY, theta);
     }
 
     public Pose2d calculatePose2(double X, double Y, double yaw) {
@@ -154,11 +167,11 @@ public class AprilTagCorrectionTest extends LinearOpMode {
         double tagX = detection.metadata.fieldPosition.get(0);
         double tagY = detection.metadata.fieldPosition.get(1);
 
-        Pose2d currPos = calculatePose(X, Y, yaw, bearing, range);
+        Pose2d currPos = calculatePoseHopefully(X, Y, yaw, tagX, tagY);
 
         drive.setPoseEstimate(currPos);
         Trajectory t3 = drive.trajectoryBuilder(currPos)
-                .splineToLinearHeading(new Pose2d(tagX - 10, tagY , Math.toRadians(0)), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(tagX - 20, tagY , Math.toRadians(0)), Math.toRadians(0))
                 .build();
         drive.followTrajectory(t3);
     }
