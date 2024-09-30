@@ -7,6 +7,7 @@ import org.opencv.core.MatOfInt4;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -14,141 +15,71 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Vector;
 
 public class FastDetectSamples extends OpenCvPipeline {
-
     public /*final*/ OpenCvCamera webcam;
-    boolean viewportPaused; 
+    boolean viewportPaused;
+
+    public double fov = 78;
 
     private final Telemetry telemetry;
 
-    private static final double ANGLE = 5;
-
-    static int[] linesArray;
-
-    //public final int fov = 78;
-
-    public FastDetectSamples(Telemetry telemetry){
+    public FastDetectSamples(/*OpenCvCamera webcam*/ Telemetry telemetry){
+        //this.webcam = webcam;
         this.telemetry = telemetry;
     }
-
-
-
-    public static void cleanLines(int noise){
-        int[] result = new int[linesArray.length];
-        int[] indices = new int[linesArray.length];
-        int values = 0;
-
-        for (int i = 0; i < linesArray.length; i += 4){
-            double alpha = Math.atan((double)(linesArray[i+3] - linesArray[i+1]) / (linesArray[i+2] - linesArray[i]));
-            if (indices[i/2] != -1){
-                Rectangle outer = new Rectangle(linesArray[i], linesArray[i+1], linesArray[i+2], linesArray[i+3]);
-                outer.width += noise;
-                outer.height += noise;
-                for (int j = i + 4; j < linesArray.length; j += 4) {
-                    double theta = Math.atan((double) (linesArray[i + 3] - linesArray[i + 1]) / (linesArray[i + 2] - linesArray[i]));
-                    if (Math.abs(alpha - theta) < ANGLE) {
-                        if (outer.contains(linesArray[j], linesArray[j + 1])) {
-                            indices[j / 2] = -1;
-                            if (!outer.contains(linesArray[j + 2], linesArray[j + 3])) {
-                                outer = outer.fit(outer, i, j + 2, noise);
-                            }
-                        } else if (outer.contains(linesArray[j + 2], linesArray[j + 3])) {
-                            indices[j / 2] = -1;
-                            if (!outer.contains(linesArray[j], linesArray[j + 1])) {
-                                outer = outer.fit(outer, i, j, noise);
-                            }
-                        }
-                    }
-                }
-                result[values] = outer.x;
-                result[values + 1] = outer.y;
-                result[values + 2] = outer.x + outer.width - noise;
-                result[values + 3] = outer.y + outer.height - noise;
-                values += 4;
-            }
-        }
-
-        linesArray =  Arrays.copyOf(result, values);
-    }
-
-
-
     public Mat processFrame(Mat input) {
         Mat yellowMask = preprocessFrame(input);
         List<MatOfPoint> contours = new ArrayList<>();
-        Imgproc.findContours(yellowMask, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_TC89_L1);
+        Mat hierarchy = new Mat();
+        Mat yosi = Mat.zeros(input.size(), input.type());
+        Imgproc.findContours(yellowMask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
         for (MatOfPoint contour : contours) {
-            MatOfInt4 lines = new MatOfInt4();
-            Mat black = Mat.zeros(input.size(), input.type());
+            MatOfPoint2f contour2f = new MatOfPoint2f(contour.toArray());
+
+            // Calculate the epsilon (accuracy parameter)
+            double epsilon = 0.02 * Imgproc.arcLength(contour2f, true);
 
             MatOfPoint2f contour_approx = new MatOfPoint2f(contour.toArray());
+            Imgproc.approxPolyDP(contour2f, contour_approx, epsilon, true);
+            MatOfPoint points = new MatOfPoint(contour_approx.toArray());
 
-            Imgproc.approxPolyDP(contour_approx, contour_approx, 8, true);
-            MatOfPoint approx = new MatOfPoint(contour_approx.toArray());
-            List<MatOfPoint> approxContours = new ArrayList<>();
-            approxContours.add(approx);
-            Imgproc.cvtColor(black, black, Imgproc.COLOR_RGB2GRAY);
-            Imgproc.drawContours(black, approxContours, -1, new Scalar(255, 255, 255), 1);
-            Imgproc.HoughLinesP(black, lines, 10, Math.PI / 90, 12, 35, 40);
+            Point[] vertices = points.toArray();
 
-
-            boolean check = false;
-            try {
-                linesArray = lines.toArray();
-                check = true;
-            }
-            catch (Exception e) {
-                telemetry.addData("No lines found", "");
-            }
-
-            if (check) {
-                //TODO - fix problem with corners, Raviv thinks we should add to every line a theta (degree) value and if 2 lines aren't close enough we remove them
-                //we can also add to the function something that checks whether or not a line "goes between" (meaning it is a diagonal) 2 other lines, then we should remove it.
-                cleanLines(5);
-                cleanLines(10);
-                telemetry.addData("Number of lines", linesArray.length / 4);
-
-                for (int i = 0; i < linesArray.length; i += 4) {
-                    int x1 = linesArray[i], y1 = linesArray[i + 1], x2 = linesArray[i + 2], y2 = linesArray[i + 3];
-                    double length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                    Imgproc.line(input, new Point(x1, y1), new Point(x2, y2), new Scalar(0, 0, 0), 1);
-                    Imgproc.putText(input, String.valueOf(Math.round(length)), new Point((x1 + x2) / 2.0, (y1 + y2) / 2.0), Imgproc.FONT_HERSHEY_SIMPLEX, 0.4, new Scalar(0, 255, 0), 1);
-                    telemetry.addData("Vertical Line Length", length);
+            for (int i = 0; i < vertices.length; i++) {
+                //telemetry.addData(String.valueOf(i), "");
+                Imgproc.circle(input, vertices[i], 2, new Scalar(0, 255, 0), 1);
+                Point start = vertices[i];
+                Point end = vertices[(i + 1) % vertices.length];
+                double length = Math.sqrt(Math.pow(start.x - end.x, 2) + Math.pow(start.y - end.y, 2));
+                if (Math.abs(start.x - end.x) < 0.2 * length) {
+                    Imgproc.line(input, start, end, new Scalar(0, 255, 0), 1);
+                    Imgproc.putText(input, Math.round(length) + "", new Point((start.x + end.x) / 2, (start.y + end.y) / 2), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0, 255, 0), 1);
                 }
             }
+
         }
         telemetry.update();
-        return yellowMask;
-
+        return input;
     }
-
-
-
     private Mat preprocessFrame(Mat frame) {
         Mat hsvFrame = new Mat();
-
-        //why this color format?
         Imgproc.cvtColor(frame, hsvFrame, Imgproc.COLOR_RGB2YCrCb);
 
+        Scalar lowerYellow = new Scalar(0, 138, 0);
+        Scalar upperYellow = new Scalar(255, 200, 100);
+
+
         Mat yellowMask = new Mat();
-
-        //why these values?
-        Core.inRange(hsvFrame, new Scalar(0, 138, 0), new Scalar(255, 200, 100), yellowMask);
-
+        Core.inRange(hsvFrame, lowerYellow, upperYellow, yellowMask);
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5, 5));
-
-        //what does this do?
         Imgproc.morphologyEx(yellowMask, yellowMask, Imgproc.MORPH_OPEN, kernel);
         Imgproc.morphologyEx(yellowMask, yellowMask, Imgproc.MORPH_CLOSE, kernel);
 
         return yellowMask;
     }
-
-
-
     @Override
     public void onViewportTapped()
     {
