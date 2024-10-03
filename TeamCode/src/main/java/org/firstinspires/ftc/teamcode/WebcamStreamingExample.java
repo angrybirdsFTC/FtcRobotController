@@ -1,12 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.opencv.DetectSamples;
 import org.firstinspires.ftc.teamcode.opencv.FastDetectSamples;
@@ -20,38 +16,36 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
 import org.openftc.easyopencv.OpenCvWebcam;
 
-@TeleOp(name = "PipelineWebcamTesting", group = "opencv")
+@TeleOp
 public class WebcamStreamingExample extends LinearOpMode
 {
     OpenCvWebcam webcam;
-    FtcDashboard dashboard = FtcDashboard.getInstance();
-    Telemetry dashboardTelemetry = dashboard.getTelemetry();
-    TelemetryPacket packet = new TelemetryPacket();
 
     @Override
     public void runOpMode()
     {
+        /*
+         * Instantiate an OpenCvCamera object for the camera we'll be using.
+         * In this sample, we're using a webcam. Note that you will need to
+         * make sure you have added the webcam to your configuration file and
+         * adjusted the name here to match what you named it in said config file.
+         *
+         * We pass it the view that we wish to use for camera monitor (on
+         * the RC phone). If no camera monitor is desired, use the alternate
+         * single-parameter constructor instead (commented out below)
+         */
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-        dashboard.startCameraStream(webcam, 3); /* TODO: IF FtcDashboard isn't working try adding...
-
-        Open build.dependencies.gradle
-            in the repositories section:
-                add maven { url = 'https://maven.brott.dev/' }
-
-            and in the dependencies:
-                add implementation 'com.acmerobotics.dashboard:dashboard:0.4.16'
-
-        */
 
         // OR...  Do Not Activate the Camera Monitor View
         //webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
 
-        telemetry = new MultipleTelemetry(telemetry, dashboardTelemetry);
-
+        /*
+         * Specify the image processing pipeline we wish to invoke upon receipt
+         * of a frame from the camera. Note that switching pipelines on-the-fly
+         * (while a streaming session is in flight) *IS* supported.
+         */
         FastDetectSamples Pipeline = new FastDetectSamples(telemetry);
-        //DetectSamples Pipeline = new DetectSamples(telemetry);
-        //DetectSamples Pipeline = new DetectSamples(telemetry);
         webcam.setPipeline(Pipeline);
 
         /*
@@ -63,7 +57,6 @@ public class WebcamStreamingExample extends LinearOpMode
          *
          * If you really want to open synchronously, the old method is still available.
          */
-
         webcam.setMillisecondsPermissionTimeout(5000); // Timeout for obtaining permission is configurable. Set before opening.
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
@@ -86,7 +79,7 @@ public class WebcamStreamingExample extends LinearOpMode
                  * For a rear facing camera or a webcam, rotation is defined assuming the camera is facing
                  * away from the user.
                  */
-                webcam.startStreaming(1280, 720, OpenCvCameraRotation.UPRIGHT);
+                webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
             }
 
             @Override
@@ -97,6 +90,7 @@ public class WebcamStreamingExample extends LinearOpMode
                  */
             }
         });
+
         telemetry.addLine("Waiting for start");
         telemetry.update();
 
@@ -146,7 +140,6 @@ public class WebcamStreamingExample extends LinearOpMode
                  */
                 webcam.stopStreaming();
                 //webcam.closeCameraDevice();
-
             }
 
             /*
@@ -154,7 +147,7 @@ public class WebcamStreamingExample extends LinearOpMode
              * excess CPU cycles for no reason. (By default, telemetry is only sent to the DS at 4Hz
              * anyway). Of course in a real OpMode you will likely not want to do this.
              */
-            sleep(200);
+            sleep(100);
         }
     }
 
@@ -173,4 +166,77 @@ public class WebcamStreamingExample extends LinearOpMode
      * if you're doing something weird where you do need it synchronized with your OpMode thread,
      * then you will need to account for that accordingly.
      */
+    class SamplePipeline extends OpenCvPipeline
+    {
+        boolean viewportPaused;
+
+        /*
+         * NOTE: if you wish to use additional Mat objects in your processing pipeline, it is
+         * highly recommended to declare them here as instance variables and re-use them for
+         * each invocation of processFrame(), rather than declaring them as new local variables
+         * each time through processFrame(). This removes the danger of causing a memory leak
+         * by forgetting to call mat.release(), and it also reduces memory pressure by not
+         * constantly allocating and freeing large chunks of memory.
+         */
+
+        @Override
+        public Mat processFrame(Mat input)
+        {
+            /*
+             * IMPORTANT NOTE: the input Mat that is passed in as a parameter to this method
+             * will only dereference to the same image for the duration of this particular
+             * invocation of this method. That is, if for some reason you'd like to save a copy
+             * of this particular frame for later use, you will need to either clone it or copy
+             * it to another Mat.
+             */
+
+            /*
+             * Draw a simple box around the middle 1/2 of the entire frame
+             */
+            Imgproc.rectangle(
+                    input,
+                    new Point(
+                            input.cols()/4,
+                            input.rows()/4),
+                    new Point(
+                            input.cols()*(3f/4f),
+                            input.rows()*(3f/4f)),
+                    new Scalar(0, 255, 0), 4);
+
+            /**
+             * NOTE: to see how to get data from your pipeline to your OpMode as well as how
+             * to change which stage of the pipeline is rendered to the viewport when it is
+             * tapped, please see {@link PipelineStageSwitchingExample}
+             */
+
+            return input;
+        }
+
+        @Override
+        public void onViewportTapped()
+        {
+            /*
+             * The viewport (if one was specified in the constructor) can also be dynamically "paused"
+             * and "resumed". The primary use case of this is to reduce CPU, memory, and power load
+             * when you need your vision pipeline running, but do not require a live preview on the
+             * robot controller screen. For instance, this could be useful if you wish to see the live
+             * camera preview as you are initializing your robot, but you no longer require the live
+             * preview after you have finished your initialization process; pausing the viewport does
+             * not stop running your pipeline.
+             *
+             * Here we demonstrate dynamically pausing/resuming the viewport when the user taps it
+             */
+
+            viewportPaused = !viewportPaused;
+
+            if(viewportPaused)
+            {
+                webcam.pauseViewport();
+            }
+            else
+            {
+                webcam.resumeViewport();
+            }
+        }
+    }
 }
