@@ -23,6 +23,8 @@ public class ArmUtils {
     public static final int ARM_EXTEND_MAX_LIMIT = 3600;
     public static final int ARM_EXTEND_MIN_LIMIT = 500;
 
+    public static final double LINEAR_SLIDES_POWER = 0.1;
+
     // Grip
     public static final double GRIP_OPEN = 0.5;
     public static final double GRIP_CLOSED = 0.2;
@@ -46,6 +48,7 @@ public class ArmUtils {
 
     DcMotor armLift;
     DcMotor armExtend;
+    DcMotor LinearSlides;
     Servo rightGrip;
     Servo leftGrip;
     Servo rollerServo;
@@ -68,6 +71,7 @@ public class ArmUtils {
     boolean sequenceFirstTime = true;
 
     public ArmUtils(HardwareMap hardwareMap) {
+        LinearSlides = hardwareMap.dcMotor.get("linear1");
         armLift = hardwareMap.dcMotor.get("armLift");
         armExtend = hardwareMap.dcMotor.get("armExtend");
         rightGrip = hardwareMap.servo.get("gripR");
@@ -272,6 +276,15 @@ public class ArmUtils {
         if (gamepad.guide) {
             droneServo.setPosition(DRONE_SHOOT);
             sleep(100);
+        }
+    }
+
+    public void moveLinearSlides(Gamepad gamepad) {
+        if (gamepad.dpad_down) {
+            LinearSlides.setPower(-LINEAR_SLIDES_POWER);
+        }
+        if (gamepad.dpad_up) {
+            LinearSlides.setPower(LINEAR_SLIDES_POWER);
         }
     }
 
